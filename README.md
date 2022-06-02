@@ -19,17 +19,17 @@ To use the Buildkite Test Collector with a SwiftPM project, add this repository 
 
 ```swift
 let package = Package(
-	name: "MyProject",
-	dependencies: [
-		.package(url: "https://github.com/buildkite/test-collector-swift")
-	],
-	targets: [
-		.target(name: "MyProject"),
-		.testTarget(
-			name: "MyProjectTests",
-			dependencies: ["MyProject", "BuildkiteTestCollector"]
-		)
-	]
+  name: "MyProject",
+  dependencies: [
+    .package(url: "https://github.com/buildkite/test-collector-swift")
+  ],
+  targets: [
+    .target(name: "MyProject"),
+    .testTarget(
+      name: "MyProjectTests",
+      dependencies: ["MyProject", "BuildkiteTestCollector"]
+    )
+  ]
 )
 ```
  
@@ -46,10 +46,6 @@ git commit -am "Add Buildkite Test Analytics"
 git push origin add-buildkite-test-analytics
 ```
 
-<!-- Local run -->
-  
-<!-- CI run -->
-
 ## 🔍 Debugging
 
 To enable debugging output, set the `BUILDKITE_ANALYTICS_DEBUG_ENABLED` environment variable to `true`.
@@ -59,8 +55,6 @@ To enable debugging output, set the `BUILDKITE_ANALYTICS_DEBUG_ENABLED` environm
 See the [GitHub 'enhancement' issues](https://github.com/buildkite/test-collector-swift/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) for planned features. Pull requests are always welcome, and we’ll give you feedback and guidance if you choose to contribute 💚
 
 ## 👩‍💻 Contributing
-
-<!-- TODO: Create contributing doc that includes how to test cross platform etc -->
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/buildkite/test-collector-swift
 

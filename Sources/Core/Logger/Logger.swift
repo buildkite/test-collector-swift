@@ -74,7 +74,7 @@ struct Logger {
   ///
   /// - Parameter timeout: The maximum duration in seconds to wait for logs to complete.
   func waitForLogs(timeout: TimeInterval = tenSeconds) {
-    let result = self.loggerTasks.yieldAndWait(for: timeout)
+    let result = self.loggerTasks.yieldAndWait(timeout: timeout)
     if result == .timedOut {
       self.error("Logger timed out before logging all messages")
     }

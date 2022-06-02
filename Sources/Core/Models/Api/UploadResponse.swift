@@ -14,7 +14,6 @@ struct UploadResponse: Equatable {
   /// The number of test results that were uploaded but will not be processed.
   var skipped: Int
 
-  // TODO: Unsure if this is an array of strings
   /// Any errors that occurred
   var errors: [String]
 }

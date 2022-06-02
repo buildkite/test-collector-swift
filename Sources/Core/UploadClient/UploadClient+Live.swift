@@ -32,7 +32,7 @@ extension UploadClient {
         }
       },
       waitForUploads: { timeout in
-        let result = uploadTasks.yieldAndWait(for: timeout)
+        let result = uploadTasks.yieldAndWait(timeout: timeout)
         if result == .timedOut {
           logger?.error("Upload client timed out before completing all uploads")
         }
