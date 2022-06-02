@@ -5,7 +5,7 @@ class TestIssueTests: XCTestCase {
   static var observer: TestObserver!
 
   override class func setUp() {
-    Self.observer = Collector().observer
+    Self.observer = TestCollector().observer
     XCTestObservationCenter.shared.addTestObserver(Self.observer)
   }
 
