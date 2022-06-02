@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2367062F2848DC7E00DD277B /* BuildkiteCollector in Frameworks */ = {isa = PBXBuildFile; productRef = 2367062E2848DC7E00DD277B /* BuildkiteCollector */; };
+		236706312848DC8200DD277B /* BuildkiteCollector in Frameworks */ = {isa = PBXBuildFile; productRef = 236706302848DC8200DD277B /* BuildkiteCollector */; };
 		23CC62E528441BF300183912 /* Tests_iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CC62E428441BF300183912 /* Tests_iOS.swift */; };
 		23CC62E728441BF300183912 /* Tests_iOSLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CC62E628441BF300183912 /* Tests_iOSLaunchTests.swift */; };
 		23CC62F128441BF300183912 /* Tests_macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CC62F028441BF300183912 /* Tests_macOS.swift */; };
@@ -67,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2367062F2848DC7E00DD277B /* BuildkiteCollector in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,12 +77,20 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				236706312848DC8200DD277B /* BuildkiteCollector in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2367062D2848DC7E00DD277B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		23CC62C628441BF200183912 = {
 			isa = PBXGroup;
 			children = (
@@ -88,6 +99,7 @@
 				23CC62E328441BF300183912 /* Tests iOS */,
 				23CC62EF28441BF300183912 /* Tests macOS */,
 				23CC62D428441BF300183912 /* Products */,
+				2367062D2848DC7E00DD277B /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -188,6 +200,9 @@
 				23CC62E228441BF300183912 /* PBXTargetDependency */,
 			);
 			name = "Tests iOS";
+			packageProductDependencies = (
+				2367062E2848DC7E00DD277B /* BuildkiteCollector */,
+			);
 			productName = "Tests iOS";
 			productReference = 23CC62E028441BF300183912 /* Tests iOS.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -206,6 +221,9 @@
 				23CC62EE28441BF300183912 /* PBXTargetDependency */,
 			);
 			name = "Tests macOS";
+			packageProductDependencies = (
+				236706302848DC8200DD277B /* BuildkiteCollector */,
+			);
 			productName = "Tests macOS";
 			productReference = 23CC62EC28441BF300183912 /* Tests macOS.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -695,6 +713,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2367062E2848DC7E00DD277B /* BuildkiteCollector */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BuildkiteCollector;
+		};
+		236706302848DC8200DD277B /* BuildkiteCollector */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BuildkiteCollector;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 23CC62C728441BF200183912 /* Project object */;
 }

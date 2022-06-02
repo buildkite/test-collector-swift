@@ -1,9 +1,5 @@
 import Foundation
 
-// TODO: Store these somewhere else in an enum?
-private let version = "0.1.0"
-private let collector = "ios-buildkite"
-
 extension EnvironmentValues {
   func runEnvironment(defaultKey: String = UUID().uuidString) -> RunEnvironment {
     let ciEnv = self.buildKite
@@ -21,8 +17,8 @@ extension EnvironmentValues {
       jobId: self.analyticsJobId ?? ciEnv?.jobId,
       message: self.analyticsMessage ?? ciEnv?.message,
       debug: self.isAnalyticsDebugEnabled ? "true" : nil,
-      version: version,
-      collector: collector
+      version: TestCollector.version,
+      collector: TestCollector.name
     )
   }
 

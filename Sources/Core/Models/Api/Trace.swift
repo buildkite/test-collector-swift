@@ -16,7 +16,6 @@ struct Trace: Equatable {
   /// The identifier of the test.
   var identifier: String?
 
-  // TODO: Capture file name and line number for the test method
   /// The source location of the test.
   var location: String?
 
@@ -26,7 +25,6 @@ struct Trace: Equatable {
   /// The result of the test.
   var result: Result?
 
-  // TODO: Failure reason for multiple failures?
   /// A short description of the failure.
   var failureReason: String?
 

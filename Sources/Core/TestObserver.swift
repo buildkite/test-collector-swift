@@ -40,8 +40,7 @@ class TestObserver: NSObject, XCTestObservation {
     self.test = TestState(
       id: self.uuid(),
       className: testCase.caseName,
-      testName: testCase.testName,
-      startDate: testCase.testRun?.startDate
+      testName: testCase.testName
     )
   }
 
@@ -84,13 +83,11 @@ class TestObserver: NSObject, XCTestObservation {
       spanId = nil
       test = nil
     }
-    // TODO: Should we assert here instead of guard?
     guard
       let span = self.spanId.map(self.tracer.endSpan(id:)),
       var test = self.test
     else { return }
 
-    test.stopDate = testCase.testRun?.stopDate
     test.result = testCase.result
 
     let trace = Trace(test: test, span: span)
