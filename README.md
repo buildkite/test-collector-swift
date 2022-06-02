@@ -1,4 +1,4 @@
-# Buildkite Test Collector for Swift
+# Buildkite Test Collector for Swift (Beta)
 
 Official [Buildkite Test Analytics](https://buildkite.com/test-analytics) collector for Swift test frameworks ✨
 
@@ -8,33 +8,44 @@ Official [Buildkite Test Analytics](https://buildkite.com/test-analytics) collec
 
 ## 👉 Installing
 
-1. [Create a test suite](https://buildkite.com/docs/test-analytics), and make note of the API token for later use.
-2. Add Buildkite Test Collector to your project as a package dependency.
-    
-    - For SwiftPM projects, add it to the dependencies of your Package.swift and include "BuildkiteTestCollector" as a dependency for your test target:
-    
-       ```swift
-    let package = Package(
-      dependencies: [
-        .package(url: "https://github.com/buildkite/test-collector-swift")
-      ],
-      targets: [
-        .target(name: "MyProject"),
-        .testTarget(
-          name: "MyProjectTests",
-          dependencies: ["MyProject", "BuildkiteTestCollector"]
-        )
-      ]
-    )
-    ``` 
-    
-    - For Xcode projects, from the File menu, select Add Packages... 
-    <!-- Add Xcode instructions -->
- 
-3. Set the environment variable `BUILDKITE_ANALYTICS_TOKEN` to your API token from earlier.
-  <!-- Add configuration options -->
+### Step 1
 
-4. Run your tests
+[Create a test suite](https://buildkite.com/docs/test-analytics), and copy the API token that it gives you.
+
+
+#### Swift Package Manager
+ 
+To use the Buildkite Test Collector with a SwiftPM project, add this repository to the `Package.swift` manifest and add `BuildkiteTestCollector` to any test target requiring analytics:
+
+```swift
+let package = Package(
+	name: "MyProject",
+	dependencies: [
+		.package(url: "https://github.com/buildkite/test-collector-swift")
+	],
+	targets: [
+		.target(name: "MyProject"),
+		.testTarget(
+			name: "MyProjectTests",
+			dependencies: ["MyProject", "BuildkiteTestCollector"]
+		)
+	]
+)
+```
+ 
+### Step 2
+Set the `BUILDKITE_ANALYTICS_TOKEN` secret on your CI to the API token from earlier.
+
+### Step 3
+
+Push your changes to a branch, and open a pull request. After a test run has been triggered, results will start appearing in your analytics dashboard. 
+
+```bash
+git checkout -b add-buildkite-test-analytics
+git commit -am "Add Buildkite Test Analytics"
+git push origin add-buildkite-test-analytics
+```
+
 <!-- Local run -->
   
 <!-- CI run -->
