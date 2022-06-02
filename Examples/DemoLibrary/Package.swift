@@ -8,16 +8,13 @@ let package = Package(
     .library(name: "DemoLibrary", targets: ["DemoLibrary"])
   ],
   dependencies: [
-    .package(name: "collector-swift", path: "../../")
+    .package(name: "BuildkiteCollector", path: "../../")
   ],
   targets: [
     .target(name: "DemoLibrary"),
     .testTarget(
       name: "DemoLibraryTests",
-      dependencies: [
-        "DemoLibrary",
-        .product(name: "BuildkiteCollector", package: "collector-swift")
-      ]
+      dependencies: ["DemoLibrary", "BuildkiteCollector"]
     )
   ]
 )

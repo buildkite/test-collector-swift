@@ -46,7 +46,7 @@ public struct TestCollector {
   ///
   /// - Parameter content: The content of this annotation
   public func annotate(_ content: @autoclosure () -> String) {
-    self.observer?.tracer.annotate(content()) // TODO: Should this be thread safe?
+    self.observer?.tracer.annotate(content())
   }
 
   /// Configures the shared collector.
@@ -56,7 +56,6 @@ public struct TestCollector {
   /// - Note: It is important that this method does not print synchronously eg. inside the TestCollector.init. Printing to the console here
   /// causes an error  when using `swift test --list-tests` and `--parallel` on Linux.
   public static func load() {
-    // TODO: Find out exactly why printing causes problems
     guard self.shared == nil else { return }
     let environment = EnvironmentValues()
     let logger = Logger(logLevel: environment.isAnalyticsDebugEnabled ? .debug : .info)
@@ -65,4 +64,7 @@ public struct TestCollector {
   }
 
   public private(set) static var shared: TestCollector?
+
+  static let name = "test-collector-swift"
+  static let version = "0.1.0"
 }

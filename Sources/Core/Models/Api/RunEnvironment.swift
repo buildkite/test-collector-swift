@@ -26,7 +26,6 @@ struct RunEnvironment: Equatable {
   /// A message associated with the test run
   var message: String?
 
-  // TODO: Can this be a bool?
   /// A value indicating if the collector ran in debug mode.
   var debug: String?
 

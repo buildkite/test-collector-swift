@@ -5,12 +5,12 @@ extension DispatchGroup {
   ///
   /// - Parameter timeout: The maximum duration in seconds to wait.
   /// - Returns: A result value indicating whether the method returned due to a timeout.
-  func yieldAndWait(for seconds: TimeInterval) -> DispatchTimeoutResult {
+  func yieldAndWait(timeout: TimeInterval) -> DispatchTimeoutResult {
     let semaphore = DispatchSemaphore(value: 0)
     DispatchQueue.global(qos: .background).async {
       semaphore.signal()
     }
     semaphore.wait()
-    return self.wait(timeout: .now() + .milliseconds(Int(seconds * 1000)))
+    return self.wait(timeout: .now() + .milliseconds(Int(timeout * 1000)))
   }
 }

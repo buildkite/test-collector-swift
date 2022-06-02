@@ -9,7 +9,7 @@ struct TestResults: Equatable {
   var runEnv: RunEnvironment
 
   /// An array of traces
-  var data: [Trace] // TODO: Maybe this could be an enum with the different data formats
+  var data: [Trace]
 
   /// Constructs test results compatible with the JSON API
   ///

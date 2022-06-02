@@ -19,9 +19,9 @@ extension Tracer {
         let span = Trace.Span(section: section, startAt: systemUptime(), detail: detail)
         stack.append((id, span))
         return id
+
       },
       endSpan: { id in
-        // TODO: Maybe not this
         assert(!stack.isEmpty, "No active spans")
         assert(stack.last!.id == id, "Id does not match current span")
 
