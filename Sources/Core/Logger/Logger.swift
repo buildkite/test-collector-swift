@@ -37,7 +37,7 @@ struct Logger {
   ///   - message: The message to be logged.
   func log(level: Level, _ message: @autoclosure () -> String) {
     guard level >= self.logLevel else { return }
-    let message = "[BuildkiteCollector] \(level): \(message())"
+    let message = "[BuildkiteTestCollector] \(level): \(message())"
     self.queue.async(group: self.loggerTasks) {
       self.printer(message)
     }

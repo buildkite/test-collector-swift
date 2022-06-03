@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2367062F2848DC7E00DD277B /* BuildkiteCollector in Frameworks */ = {isa = PBXBuildFile; productRef = 2367062E2848DC7E00DD277B /* BuildkiteCollector */; };
-		236706312848DC8200DD277B /* BuildkiteCollector in Frameworks */ = {isa = PBXBuildFile; productRef = 236706302848DC8200DD277B /* BuildkiteCollector */; };
+		238D33962849926A00F1A67E /* BuildkiteTestCollector in Frameworks */ = {isa = PBXBuildFile; productRef = 238D33952849926A00F1A67E /* BuildkiteTestCollector */; };
+		238D33982849926E00F1A67E /* BuildkiteTestCollector in Frameworks */ = {isa = PBXBuildFile; productRef = 238D33972849926E00F1A67E /* BuildkiteTestCollector */; };
 		23CC62E528441BF300183912 /* Tests_iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CC62E428441BF300183912 /* Tests_iOS.swift */; };
 		23CC62E728441BF300183912 /* Tests_iOSLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CC62E628441BF300183912 /* Tests_iOSLaunchTests.swift */; };
 		23CC62F128441BF300183912 /* Tests_macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CC62F028441BF300183912 /* Tests_macOS.swift */; };
@@ -69,7 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2367062F2848DC7E00DD277B /* BuildkiteCollector in Frameworks */,
+				238D33982849926E00F1A67E /* BuildkiteTestCollector in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,7 +77,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				236706312848DC8200DD277B /* BuildkiteCollector in Frameworks */,
+				238D33962849926A00F1A67E /* BuildkiteTestCollector in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -201,7 +201,7 @@
 			);
 			name = "Tests iOS";
 			packageProductDependencies = (
-				2367062E2848DC7E00DD277B /* BuildkiteCollector */,
+				238D33972849926E00F1A67E /* BuildkiteTestCollector */,
 			);
 			productName = "Tests iOS";
 			productReference = 23CC62E028441BF300183912 /* Tests iOS.xctest */;
@@ -222,7 +222,7 @@
 			);
 			name = "Tests macOS";
 			packageProductDependencies = (
-				236706302848DC8200DD277B /* BuildkiteCollector */,
+				238D33952849926A00F1A67E /* BuildkiteTestCollector */,
 			);
 			productName = "Tests macOS";
 			productReference = 23CC62EC28441BF300183912 /* Tests macOS.xctest */;
@@ -715,13 +715,13 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		2367062E2848DC7E00DD277B /* BuildkiteCollector */ = {
+		238D33952849926A00F1A67E /* BuildkiteTestCollector */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = BuildkiteCollector;
+			productName = BuildkiteTestCollector;
 		};
-		236706302848DC8200DD277B /* BuildkiteCollector */ = {
+		238D33972849926E00F1A67E /* BuildkiteTestCollector */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = BuildkiteCollector;
+			productName = BuildkiteTestCollector;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
