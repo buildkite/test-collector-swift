@@ -1,7 +1,7 @@
 import XCTest
 
-final class BuildkiteCollectorTests: XCTestCase {
-  // NB: The BuildkiteCollector module should not be imported above
+final class BuildkiteTestCollectorTests: XCTestCase {
+  // NB: The BuildkiteTestCollector module should not be imported above
   func testAutomaticallyConfiguresCollectorBeforeRunningTests() throws {
     let observers = XCTestObservationCenter.shared.observers
     XCTAssertTrue(
