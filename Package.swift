@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-  name: "BuildkiteCollector",
+  name: "test-collector-swift",
   platforms: [
     .macOS("10.15"),
     .iOS("13.0"),
@@ -11,13 +11,13 @@ let package = Package(
     .watchOS("6.0")
   ],
   products: [
-    .library(name: "BuildkiteCollector", targets: ["BuildkiteCollector"])
+    .library(name: "BuildkiteTestCollector", targets: ["BuildkiteTestCollector"])
   ],
   targets: [
-    .target(name: "BuildkiteCollector", dependencies: ["Core", "Loader"]),
+    .target(name: "BuildkiteTestCollector", dependencies: ["Core", "Loader"]),
     .target(name: "Core"),
     .target(name: "Loader"),
-    .testTarget(name: "BuildkiteCollectorTests", dependencies: ["BuildkiteCollector"]),
+    .testTarget(name: "BuildkiteTestCollectorTests", dependencies: ["BuildkiteTestCollector"]),
     .testTarget(name: "CoreTests", dependencies: ["Core"])
   ]
 )

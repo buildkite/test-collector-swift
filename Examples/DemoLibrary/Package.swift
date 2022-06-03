@@ -8,13 +8,13 @@ let package = Package(
     .library(name: "DemoLibrary", targets: ["DemoLibrary"])
   ],
   dependencies: [
-    .package(name: "BuildkiteCollector", path: "../../")
+    .package(name: "BuildkiteTestCollector", path: "../../")
   ],
   targets: [
     .target(name: "DemoLibrary"),
     .testTarget(
       name: "DemoLibraryTests",
-      dependencies: ["DemoLibrary", "BuildkiteCollector"]
+      dependencies: ["DemoLibrary", "BuildkiteTestCollector"]
     )
   ]
 )

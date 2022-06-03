@@ -21,13 +21,16 @@ To use the Buildkite Test Collector with a SwiftPM project, add this repository 
 let package = Package(
   name: "MyProject",
   dependencies: [
-    .package(url: "https://github.com/buildkite/test-collector-swift")
+    .package(url: "https://github.com/buildkite/test-collector-swift", from: "0.1.0")
   ],
   targets: [
     .target(name: "MyProject"),
     .testTarget(
       name: "MyProjectTests",
-      dependencies: ["MyProject", "BuildkiteTestCollector"]
+      dependencies: [
+        "MyProject",
+        .product(name: "BuildkiteTestCollector", package: "test-collector-swift")
+      ]
     )
   ]
 )

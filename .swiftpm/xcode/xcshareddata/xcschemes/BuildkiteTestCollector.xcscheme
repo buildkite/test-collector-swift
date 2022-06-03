@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BuildkiteCollector"
-               BuildableName = "BuildkiteCollector"
-               BlueprintName = "BuildkiteCollector"
+               BlueprintIdentifier = "BuildkiteTestCollector"
+               BuildableName = "BuildkiteTestCollector"
+               BlueprintName = "BuildkiteTestCollector"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -32,9 +32,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BuildkiteCollectorTests"
-               BuildableName = "BuildkiteCollectorTests"
-               BlueprintName = "BuildkiteCollectorTests"
+               BlueprintIdentifier = "BuildkiteTestCollectorTests"
+               BuildableName = "BuildkiteTestCollectorTests"
+               BlueprintName = "BuildkiteTestCollectorTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
@@ -70,9 +70,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "BuildkiteCollector"
-            BuildableName = "BuildkiteCollector"
-            BlueprintName = "BuildkiteCollector"
+            BlueprintIdentifier = "BuildkiteTestCollector"
+            BuildableName = "BuildkiteTestCollector"
+            BlueprintName = "BuildkiteTestCollector"
             ReferencedContainer = "container:">
          </BuildableReference>
       </MacroExpansion>
