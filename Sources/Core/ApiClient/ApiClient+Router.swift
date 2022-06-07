@@ -21,7 +21,7 @@ extension ApiClient {
         switch route {
         case .upload(let testData):
           let data = try encoder.encode(testData)
-          request.url?.appendPathComponent("upload")
+          request.url?.appendPathComponent("uploads")
           request.setValue("application/json", forHTTPHeaderField: "Content-Type")
           request.httpMethod = "POST"
           request.httpBody = data
