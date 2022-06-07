@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-  name: "test-collector-swift",
+  name: "BuildkiteTestCollector",
   platforms: [
     .macOS("10.15"),
     .iOS("13.0"),
