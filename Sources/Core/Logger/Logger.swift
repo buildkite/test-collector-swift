@@ -20,7 +20,7 @@ struct Logger {
   ///   - queue: A closure that is called when this logger logs a message
   init(
     logLevel: Logger.Level = .info,
-    printer: @escaping (String) -> Void = { print($0) },
+    printer: @escaping (String) -> Void = loggerPrint,
     queue: DispatchQueue = loggerQueue
   ) {
     self.logLevel = logLevel
@@ -113,3 +113,13 @@ private let loggerQueue = DispatchQueue(
   label: "com.buildkite.collector-swift.logger",
   qos: .background
 )
+
+// Default printer used by Logger
+private func loggerPrint(_ message: String) {
+  // While loading, print to stderr to avoid conflicting with `swift test --list-tests`
+  if TestCollector.shared == nil {
+    fputs("\(message)\n", stderr)
+  } else {
+    print(message)
+  }
+}
