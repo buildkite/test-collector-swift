@@ -14,10 +14,7 @@ public struct TestCollector {
     logger: Logger? = nil
   ) {
     guard environment.isAnalyticsEnabled else {
-      // To prevent error when loading collector during `--list-tests`
-      DispatchQueue.main.async {
-        logger?.info("TestCollector disabled. Test results will not be collected.")
-      }
+      logger?.info("TestCollector disabled. Test results will not be collected.")
       self.observer = nil
       return
     }
@@ -30,10 +27,7 @@ public struct TestCollector {
       let runEnvironment = environment.runEnvironment()
       uploader = .live(api: api, logger: logger, runEnvironment: runEnvironment)
     } else {
-      // To prevent error when loading collector during `--list-tests`
-      DispatchQueue.main.async {
-        logger?.info("TestCollector unable to locate API key. Test results will not be uploaded.")
-      }
+      logger?.info("TestCollector unable to locate API key. Test results will not be uploaded.")
       uploader = nil
     }
 
@@ -53,13 +47,15 @@ public struct TestCollector {
   ///
   /// Used by the root target to create a collector and add it to the test observation center.
   ///
-  /// - Note: It is important that this method does not print synchronously eg. inside the TestCollector.init. Printing to the console here
-  /// causes an error  when using `swift test --list-tests` and `--parallel` on Linux.
+  /// - Note: It is important that this method does not print to stdout eg. inside the TestCollector.init. Outputting to stdout causes
+  /// an error  when using `swift test --list-tests` and `--parallel` on Linux.
   public static func load() {
     guard self.shared == nil else { return }
     let environment = EnvironmentValues()
     let logger = Logger(logLevel: environment.isAnalyticsDebugEnabled ? .debug : .info)
-    self.shared = TestCollector(environment: environment, logger: logger)
+    let collector = TestCollector(environment: environment, logger: logger)
+    logger.waitForLogs() // Ensures logging is complete to avoid printing to stdout
+    self.shared = collector
     self.shared?.observer.map(XCTestObservationCenter.shared.addTestObserver)
   }
 
