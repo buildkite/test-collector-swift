@@ -16,7 +16,7 @@ final class ApiClientTests: XCTestCase {
 
     XCTAssertEqual(value.status, "OK")
     server.received { request in
-      XCTAssertEqual("https://analytics-api.buildkite.com/v1/upload", request.url?.absoluteString)
+      XCTAssertEqual("https://analytics-api.buildkite.com/v1/uploads", request.url?.absoluteString)
       XCTAssertEqual("Token token=\"token\"", request.authorizationHeader)
       XCTAssertEqual("POST", request.httpMethod)
       XCTAssertEqual(
