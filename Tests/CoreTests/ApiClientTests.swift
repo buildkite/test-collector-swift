@@ -8,21 +8,25 @@ import FoundationNetworking
 final class ApiClientTests: XCTestCase {
   func testApiClientMakesUploadRequest() async throws {
     struct Response: Decodable { var status: String }
-    let server = MockServer(responses: .json("{\"status\":\"OK\"}"))
-    let api = ApiClient.live(apiToken: "token", session: server.session)
+    var requests = [URLRequest]()
+    let session = ApiSession { request in
+      requests.append(request)
+      return ("{\"status\":\"OK\"}".data(using: .utf8)!, .success())
+    }
+    let api = ApiClient.live(apiToken: "token", session: session)
     let results = TestResults.json(runEnv: .init(key: "key"), data: [])
 
     let (value, _) = try await api.data(for: .upload(results), as: Response.self)
 
     XCTAssertEqual(value.status, "OK")
-    server.received { request in
-      XCTAssertEqual("https://analytics-api.buildkite.com/v1/uploads", request.url?.absoluteString)
-      XCTAssertEqual("Token token=\"token\"", request.authorizationHeader)
-      XCTAssertEqual("POST", request.httpMethod)
-      XCTAssertEqual(
-        ["format": "json", "run_env": ["key": "key"], "data": []],
-        request.httpBodyDictionary
-      )
-    }
+    XCTAssertEqual(requests.count, 1)
+    let request = try XCTUnwrap(requests.first)
+    XCTAssertEqual(request.url?.absoluteString, "https://analytics-api.buildkite.com/v1/uploads")
+    XCTAssertEqual(request.authorizationHeader, "Token token=\"token\"")
+    XCTAssertEqual(request.httpMethod, "POST")
+    XCTAssertEqual(
+      request.httpBodyDictionary,
+      ["format": "json", "run_env": ["key": "key"], "data": []]
+    )
   }
 }

@@ -10,36 +10,26 @@ extension ApiClient {
     baseUrl: URL = URL(string: "https://analytics-api.buildkite.com/v1/")!,
     encoder: JSONEncoder = .init(),
     decoder: JSONDecoder = .init(),
-    session: URLSession = .shared
+    session: ApiSession = .urlSession(.shared)
   ) -> ApiClient {
-    let router = Router(apiToken: apiToken, baseUrl: baseUrl, encoder: encoder)
-    return ApiClient(decoder: decoder) { route in
-      let request = try router.request(for: route)
+    func makeRequest(from route: ApiRoute) throws -> URLRequest {
+      var request = URLRequest(url: baseUrl)
+      request.setValue("Token token=\"\(apiToken)\"", forHTTPHeaderField: "Authorization")
 
-      #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-      if #available(macOS 12, iOS 15, tvOS 15, watchOS 8, *) {
-        return try await session.data(for: request)
+      switch route {
+      case .upload(let testData):
+        let data = try encoder.encode(testData)
+        request.url?.appendPathComponent("uploads")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = "POST"
+        request.httpBody = data
+        return request
       }
-      #endif
+    }
 
-      var dataTask: URLSessionDataTask?
-      let cancel: () -> Void = { dataTask?.cancel() }
-
-      return try await withTaskCancellationHandler(
-        handler: { cancel() },
-        operation: {
-          try await withCheckedThrowingContinuation { continuation in
-            dataTask = session.dataTask(with: request) { data, response, error in
-              if let data = data, let response = response {
-                continuation.resume(returning: (data, response))
-              } else {
-                continuation.resume(throwing: error ?? URLError(.badServerResponse))
-              }
-            }
-            dataTask?.resume()
-          }
-        }
-      )
+    return ApiClient(decoder: decoder) { route in
+      let request = try makeRequest(from: route)
+      return try await session.data(for: request)
     }
   }
 }
