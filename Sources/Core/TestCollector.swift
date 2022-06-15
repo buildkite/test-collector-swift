@@ -62,5 +62,5 @@ public struct TestCollector {
   public private(set) static var shared: TestCollector?
 
   static let name = "test-collector-swift"
-  static let version = "0.1.0"
+  static let version = "0.1.1"
 }
