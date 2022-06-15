@@ -13,7 +13,7 @@ extension Trace {
     var endAt: TimeInterval?
 
     /// The number of seconds that elapsed during this span.
-    var duration: TimeInterval
+    var duration: TimeInterval?
 
     /// Any information related to this span.
     var detail: [String: String] = [:]
