@@ -25,11 +25,11 @@ struct ApiClient {
     as type: Value.Type
   ) async throws -> (value: Value, response: URLResponse) {
     let (data, response) = try await self.request(route)
-    let value = try await decode(data, as: type)
+    let value = try decode(data, as: type)
     return (value, response)
   }
 
-  func decode<Value: Decodable>(_ data: Data, as type: Value.Type) async throws -> Value {
+  func decode<Value: Decodable>(_ data: Data, as type: Value.Type) throws -> Value {
     try self.decoder.decode(type, from: data)
   }
 }
