@@ -2,6 +2,11 @@ import Foundation
 
 /// A type used to upload traces asynchronously during a test run.
 struct UploadClient {
+  enum UploadError: Error {
+    case error(message: String)
+    case unknown
+  }
+
   private var upload: (Trace) async throws -> Void
   private var waitForUploads: (TimeInterval) -> Void
 

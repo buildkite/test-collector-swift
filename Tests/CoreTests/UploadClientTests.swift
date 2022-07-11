@@ -31,4 +31,32 @@ final class UploadClientTests: XCTestCase {
 
     self.wait(for: [uploadCompleted], timeout: 1)
   }
+
+  func testErrorResponsesAreThrowAsErrors() async throws {
+    let errorMessage = "Something went wrong"
+    let errorResponse = UploadFailureResponse(message: errorMessage)
+
+    let uploadClient = UploadClient.live(
+      api: .init(
+        decoder: JSONDecoder(),
+        request: { _ in
+          (try JSONEncoder().encode(errorResponse), URLResponse(url: URL(string: "test")!, mimeType: nil, expectedContentLength: 0, textEncodingName: nil))
+        }
+        )
+      )
+    do {
+      try await uploadClient.upload(trace: Trace(id: "id", history: .init(section: "section")))
+    } catch {
+      guard let error = error as? UploadClient.UploadError,
+            case let .error(message) = error else {
+        XCTFail("Thrown error should be UploadError type")
+        return
+      }
+      
+      XCTAssertEqual(message, errorMessage)
+      return
+    }
+
+    XCTFail("Did not throw error with error response")
+  }
 }
