@@ -32,31 +32,18 @@ final class UploadClientTests: XCTestCase {
     self.wait(for: [uploadCompleted], timeout: 1)
   }
 
-  func testErrorResponsesAreThrowAsErrors() async throws {
-    let errorMessage = "Something went wrong"
-    let errorResponse = UploadFailureResponse(message: errorMessage)
+  func testFailureResponseThrowsAsError() async throws {
+    let data = try JSONEncoder().encode(UploadFailureResponse(message: "Something went wrong"))
+    let api = ApiClient { _ in (data, .stub()) }
+    let uploadClient = UploadClient.live(api: api)
+    let trace = Trace(id: "id", history: .init(section: "section"))
 
-    let uploadClient = UploadClient.live(
-      api: .init(
-        decoder: JSONDecoder(),
-        request: { _ in
-          (try JSONEncoder().encode(errorResponse), URLResponse(url: URL(string: "test")!, mimeType: nil, expectedContentLength: 0, textEncodingName: nil))
-        }
-        )
-      )
-    do {
-      try await uploadClient.upload(trace: Trace(id: "id", history: .init(section: "section")))
-    } catch {
-      guard let error = error as? UploadClient.UploadError,
-            case let .error(message) = error else {
-        XCTFail("Thrown error should be UploadError type")
-        return
-      }
-      
-      XCTAssertEqual(message, errorMessage)
-      return
+    let task = Task { try await uploadClient.upload(trace: trace) }
+    let result = await task.result
+
+    XCTAssertThrowsError(try result.get()) { error in
+      XCTAssertTrue(error is UploadClient.UploadError)
+      XCTAssertEqual(error.localizedDescription, "Something went wrong")
     }
-
-    XCTFail("Did not throw error with error response")
   }
 }
