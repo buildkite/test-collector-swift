@@ -27,3 +27,7 @@ extension UploadResponse: Decodable {
     case errors
   }
 }
+
+struct UploadFailureResponse: Equatable, Codable {
+  var message: String
+}

@@ -11,7 +11,7 @@ final class ApiClientTests: XCTestCase {
     var requests = [URLRequest]()
     let session = ApiSession { request in
       requests.append(request)
-      return ("{\"status\":\"OK\"}".data(using: .utf8)!, .success())
+      return ("{\"status\":\"OK\"}".data(using: .utf8)!, .stub())
     }
     let api = ApiClient.live(apiToken: "token", session: session)
     let results = TestResults.json(runEnv: .init(key: "key"), data: [])
