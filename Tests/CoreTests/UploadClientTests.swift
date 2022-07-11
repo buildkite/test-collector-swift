@@ -31,4 +31,19 @@ final class UploadClientTests: XCTestCase {
 
     self.wait(for: [uploadCompleted], timeout: 1)
   }
+
+  func testFailureResponseThrowsAsError() async throws {
+    let data = try JSONEncoder().encode(UploadFailureResponse(message: "Something went wrong"))
+    let api = ApiClient { _ in (data, .stub()) }
+    let uploadClient = UploadClient.live(api: api)
+    let trace = Trace(id: "id", history: .init(section: "section"))
+
+    let task = Task { try await uploadClient.upload(trace: trace) }
+    let result = await task.result
+
+    XCTAssertThrowsError(try result.get()) { error in
+      XCTAssertTrue(error is UploadClient.UploadError)
+      XCTAssertEqual(error.localizedDescription, "Something went wrong")
+    }
+  }
 }
