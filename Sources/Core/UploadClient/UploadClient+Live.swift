@@ -35,7 +35,7 @@ extension UploadClient {
           }
           logger?.debug("Uploaded \(result)")
         } catch {
-          logger?.error(error.localizedDescription)
+          logger?.error("Failed to upload result, got error: \(error.localizedDescription)")
           throw error
         }
       },
