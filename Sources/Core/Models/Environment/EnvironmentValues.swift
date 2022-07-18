@@ -24,32 +24,47 @@ struct EnvironmentValues {
     self.string(for: key).flatMap { NSString(string: $0).boolValue }
   }
 
-  func string(for key: String) -> String? {
+  func string(for key: String, redactInLogs: Bool = false) -> String? {
     let customDictionaryValue = self.values[key]
-    logger?.debug("Looked in values dictionary for \(key), found: \(String(describing: customDictionaryValue))")
+    logger?.debug(debugMessage(key: key, value: customDictionaryValue, location: "CustomDictionaryValue", redactValue: redactInLogs))
     if let value = customDictionaryValue {
       return value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     let environmentValue = self.getFromEnvironment(key)
-    logger?.debug("Looked in environment for \(key), found: \(String(describing: environmentValue))")
+    logger?.debug(debugMessage(key: key, value: environmentValue, location: "environment", redactValue: redactInLogs))
     if let value = environmentValue {
       return value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     let infoDictionaryValue = self.getFromInfoDictionary(key)
-    logger?.debug("Looked in info dictionary for \(key), found: \(String(describing: infoDictionaryValue))")
+    logger?.debug(debugMessage(key: key, value: infoDictionaryValue, location: "info dictionary", redactValue: redactInLogs))
     if let value = infoDictionaryValue {
       return value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     return nil
   }
+
+  private func debugMessage(key: String, value: String?, location: String, redactValue: Bool) -> String {
+    let valueDescription: String
+    if let value = value {
+      if redactValue {
+        valueDescription = "[Redacted]"
+      } else {
+        valueDescription = value
+      }
+    } else {
+      valueDescription = "nil"
+    }
+
+    return "Looked in \(location) for \(key), found: \(valueDescription)"
+  }
 }
 
 extension EnvironmentValues {
   var isAnalyticsEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_ENABLED") ?? true }
-  var analyticsToken: String? { self.string(for: "BUILDKITE_ANALYTICS_TOKEN") }
+  var analyticsToken: String? { self.string(for: "BUILDKITE_ANALYTICS_TOKEN", redactInLogs: true) }
 
   var isAnalyticsDebugEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_DEBUG_ENABLED") ?? false }
   var analyticsDebugFilePath: String? { self.string(for: "BUILDKITE_ANALYTICS_DEBUG_FILEPATH") }
