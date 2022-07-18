@@ -50,6 +50,8 @@ key:
 value:
 `$(BUILDKITE_ANALYTICS_TOKEN)`
 
+The same key value pair can be specified in your main bundle's `info.plist` file if you would rather specify them there. Note variables in the environment take precedent over those in the `info.plist` file.
+
 ### Step 3.5 (Optional)
 
 The only required environment variable is the analytics token but if you're using one of the supported CI platforms they can pass extra information to the test-collector to enrich the reports. Things like commit messages, branch names, build numbers, etc. Open your test scheme or test plan again and add the following key value pairs depending on your CI platform.
@@ -87,6 +89,8 @@ Key: GITHUB_REPOSITORY, Value: $(GITHUB_REPOSITORY)
 Key: GITHUB_RUN_ID, Value: $(GITHUB_RUN_ID)
 Key: GITHUB_SHA, Value: $(GITHUB_SHA)
 ```
+
+The same key value pairs can be specified in your main bundle's `info.plist` file if you would rather specify them there. Note variables in the environment take precedent over those in the `info.plist` file.
 ### Step 4
 
 Push your changes to a branch, and open a pull request. After a test run has been triggered, results will start appearing in your analytics dashboard.
