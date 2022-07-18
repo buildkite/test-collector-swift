@@ -67,7 +67,6 @@ extension EnvironmentValues {
   var analyticsToken: String? { self.string(for: "BUILDKITE_ANALYTICS_TOKEN", redactInLogs: true) }
 
   var isAnalyticsDebugEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_DEBUG_ENABLED") ?? false }
-  var analyticsDebugFilePath: String? { self.string(for: "BUILDKITE_ANALYTICS_DEBUG_FILEPATH") }
 
   var analyticsKey: String? { self.string(for: "BUILDKITE_ANALYTICS_KEY") }
   var analyticsUrl: String? { self.string(for: "BUILDKITE_ANALYTICS_URL") }
