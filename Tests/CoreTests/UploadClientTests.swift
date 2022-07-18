@@ -8,7 +8,7 @@ import FoundationNetworking
 final class UploadClientTests: XCTestCase {
   func testWaitSynchronouslyForUploads() throws {
     let uploadCompleted = self.expectation(description: "upload completed")
-    let uploadClient = UploadClient.live(api: .fulfill(uploadCompleted, after: 0.5))
+    let uploadClient = UploadClient.live(api: .fulfill(uploadCompleted, after: 0.5), runEnvironment: EnvironmentValues().runEnvironment())
     let trace = Trace(id: "id", history: .init(section: "section"))
 
     Task { try await uploadClient.upload(trace: trace) }
@@ -21,7 +21,7 @@ final class UploadClientTests: XCTestCase {
   func testWaitShouldTimeout() throws {
     let uploadCompleted = self.expectation(description: "upload completed")
     uploadCompleted.isInverted = true
-    let uploadClient = UploadClient.live(api: .fulfill(uploadCompleted, after: 0.5))
+    let uploadClient = UploadClient.live(api: .fulfill(uploadCompleted, after: 0.5), runEnvironment: EnvironmentValues().runEnvironment())
     let trace = Trace(id: "id", history: .init(section: "section"))
 
     let task = Task { try await uploadClient.upload(trace: trace) }
@@ -35,7 +35,7 @@ final class UploadClientTests: XCTestCase {
   func testFailureResponseThrowsAsError() async throws {
     let data = try JSONEncoder().encode(UploadFailureResponse(message: "Something went wrong"))
     let api = ApiClient { _ in (data, .stub()) }
-    let uploadClient = UploadClient.live(api: api)
+    let uploadClient = UploadClient.live(api: api, runEnvironment: EnvironmentValues().runEnvironment())
     let trace = Trace(id: "id", history: .init(section: "section"))
 
     let task = Task { try await uploadClient.upload(trace: trace) }
