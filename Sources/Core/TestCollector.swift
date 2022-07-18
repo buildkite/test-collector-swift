@@ -32,7 +32,7 @@ public struct TestCollector {
     if let apiToken = unwrappedEnvironment.analyticsToken {
       let api = ApiClient.live(apiToken: apiToken)
       let runEnvironment = unwrappedEnvironment.runEnvironment()
-      uploader = .live(api: api, logger: logger, runEnvironment: runEnvironment)
+      uploader = .live(api: api, runEnvironment: runEnvironment, logger: logger)
     } else {
       logger?.info("TestCollector unable to locate API key. Test results will not be uploaded.")
       uploader = nil

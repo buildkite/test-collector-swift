@@ -62,3 +62,21 @@ extension Trace {
     self.history = span
   }
 }
+
+extension Trace: CustomStringConvertible {
+  var description: String {
+    """
+
+      id: \(id)
+      scope: \(scope ?? "nil")
+      name: \(name ?? "nil")
+      identifier: \(identifier ?? "nil")
+      result: \(result?.rawValue ?? "nil")
+      failureReason: \(failureReason ?? "nil")
+      failureExpanded: \(failureExpanded)
+      history:
+      \(history)
+
+    """
+  }
+}
