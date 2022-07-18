@@ -37,11 +37,59 @@ let package = Package(
 ```
  
 ### Step 2
+
 Set the `BUILDKITE_ANALYTICS_TOKEN` secret on your CI to the API token from earlier.
 
 ### Step 3
 
-Push your changes to a branch, and open a pull request. After a test run has been triggered, results will start appearing in your analytics dashboard. 
+If you're testing an Xcode project there's an extra step, Xcode doesn't pass environment variables from the process to the test runner so we need to manually map them. Open your test scheme or test plan(whichever you are using) and under the environment variable section add the following entry:
+
+key:
+`BUILDKITE_ANALYTICS_TOKEN`
+
+value:
+`$(BUILDKITE_ANALYTICS_TOKEN)`
+
+### Step 3.5 (Optional)
+
+The only required environment variable is the analytics token but if you're using one of the supported CI platforms they can pass extra information to the test-collector to enrich the reports. Things like commit messages, branch names, build numbers, etc. Open your test scheme or test plan again and add the following key value pairs depending on your CI platform.
+
+**Buildkite**
+
+```
+Key: BUILDKITE_BUILD_ID, Value: $(BUILDKITE_BUILD_ID)
+Key: BUILDKITE_BUILD_URL, Value: $(BUILDKITE_BUILD_URL)
+Key: BUILDKITE_BRANCH, Value: $(BUILDKITE_BRANCH)
+Key: BUILDKITE_COMMIT, Value: $(BUILDKITE_COMMIT)
+Key: BUILDKITE_BUILD_NUMBER, Value: $(BUILDKITE_BUILD_NUMBER)
+Key: BUILDKITE_JOB_ID, Value: $(BUILDKITE_JOB_ID)
+Key: BUILDKITE_MESSAGE, Value: $(BUILDKITE_MESSAGE)
+```
+
+**Circle CI**
+
+```
+Key: CIRCLE_BUILD_NUM, Value: $(BUILDKITCIRCLE_BUILD_NUME_MESSAGE)
+Key: CIRCLE_WORKFLOW_ID, Value: $(CIRCLE_WORKFLOW_ID)
+Key: CIRCLE_BUILD_URL, Value: $(CIRCLE_BUILD_URL)
+Key: CIRCLE_BRANCH, Value: $(CIRCLE_BRANCH)
+Key: CIRCLE_SHA1, Value: $(CIRCLE_SHA1)
+```
+
+**GitHub Actions**
+
+```
+Key: GITHUB_ACTION, Value: $(GITHUB_ACTION)
+Key: GITHUB_REF, Value: $(GITHUB_REF)
+Key: GITHUB_RUN_NUMBER, Value: $(GITHUB_RUN_NUMBER)
+Key: GITHUB_RUN_ATTEMPT, Value: $(GITHUB_RUN_ATTEMPT)
+Key: GITHUB_REPOSITORY, Value: $(GITHUB_REPOSITORY)
+Key: GITHUB_RUN_ID, Value: $(GITHUB_RUN_ID)
+Key: GITHUB_SHA, Value: $(GITHUB_SHA)
+```
+### Step 4
+
+Push your changes to a branch, and open a pull request. After a test run has been triggered, results will start appearing in your analytics dashboard.
 
 ```bash
 git checkout -b add-buildkite-test-analytics
