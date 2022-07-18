@@ -7,7 +7,7 @@ extension UploadClient {
   /// - Parameters:
   ///   - api: An API client.
   ///   - logger: A logger.
-  ///   - runEnvironment: The run environment to accompany uploaded traces, `nil` to use the default `RunEnvironment`.
+  ///   - runEnvironment: The run environment to accompany uploaded traces.
   /// - Returns: A upload client that uses an api client.
   static func live(
     api: ApiClient,
