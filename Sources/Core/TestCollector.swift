@@ -7,20 +7,13 @@ public struct TestCollector {
   /// Constructs a collector using the provided environment values
   ///
   /// - Parameters:
-  ///   - environment: The environment values, `nil` to use the default `EnvironmentValues`.
+  ///   - environment: The environment values.
   ///   - logger: A logger.
   init(
-    environment: EnvironmentValues? = nil,
+    environment: EnvironmentValues,
     logger: Logger? = nil
   ) {
-    let unwrappedEnvironment: EnvironmentValues
-    if let environment = environment {
-      unwrappedEnvironment = environment
-    } else {
-      unwrappedEnvironment = EnvironmentValues(logger: logger)
-    }
-
-    guard unwrappedEnvironment.isAnalyticsEnabled else {
+    guard environment.isAnalyticsEnabled else {
       logger?.info("TestCollector disabled. Test results will not be collected.")
       self.observer = nil
       return
@@ -29,9 +22,9 @@ public struct TestCollector {
     let tracer = Tracer.live()
 
     let uploader: UploadClient?
-    if let apiToken = unwrappedEnvironment.analyticsToken {
+    if let apiToken = environment.analyticsToken {
       let api = ApiClient.live(apiToken: apiToken)
-      let runEnvironment = unwrappedEnvironment.runEnvironment()
+      let runEnvironment = environment.runEnvironment()
       uploader = .live(api: api, runEnvironment: runEnvironment, logger: logger)
     } else {
       logger?.info("TestCollector unable to locate API key. Test results will not be uploaded.")
