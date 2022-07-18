@@ -2,7 +2,7 @@ import Foundation
 
 extension Trace {
   /// A type containing information for a timed block of work.
-  struct Span: Equatable, CustomStringConvertible {
+  struct Span: Equatable {
     /// The type of span. Used for categorising spans.
     var section: String
 
@@ -20,17 +20,6 @@ extension Trace {
 
     /// Any spans that occurred during this span.
     var children: [Span] = []
-
-    var description: String {
-      """
-        section: \(section)
-        startAt: \(startAt?.description ?? "nil")
-        endAt: \(endAt?.description ?? "nil")
-        duration: \(duration?.description ?? "nil")
-        detail: \(detail)
-        children: \(children)
-      """
-    }
   }
 }
 

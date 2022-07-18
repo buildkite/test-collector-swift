@@ -51,21 +51,3 @@ extension RunEnvironment: Encodable {
     case collector
   }
 }
-
-extension RunEnvironment: CustomStringConvertible {
-  var description: String {
-    """
-      CI: \(ci ?? "nil")
-      key: \(key)
-      URL: \(url ?? "nil")
-      Branch: \(branch ?? "nil")
-      Commit SHA: \(commitSha ?? "nil")
-      Number: \(number ?? "nil")
-      Job ID: \(jobId ?? "nil")
-      Message: \(message ?? "nil")
-      Debug: \(debug ?? "nil")
-      Version: \(version ?? "nil")
-      collector: \(collector ?? "nil")
-    """
-  }
-}

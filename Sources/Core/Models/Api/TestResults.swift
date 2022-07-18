@@ -39,15 +39,3 @@ extension TestResults: Encodable {
     case data
   }
 }
-
-extension TestResults: CustomStringConvertible {
-  var description: String {
-    """
-
-    format: \(format)
-    runEnv:
-    \(runEnv)
-    data: \(data)
-    """
-  }
-}
