@@ -7,21 +7,28 @@ extension UploadClient {
   /// - Parameters:
   ///   - api: An API client.
   ///   - logger: A logger.
-  ///   - runEnvironment: The run environment to accompany uploaded traces.
+  ///   - runEnvironment: The run environment to accompany uploaded traces, `nil` to use the default `RunEnvironment`.
   /// - Returns: A upload client that uses an api client.
   static func live(
     api: ApiClient,
     logger: Logger? = nil,
-    runEnvironment: RunEnvironment = EnvironmentValues().runEnvironment()
+    runEnvironment: RunEnvironment? = nil
   ) -> UploadClient {
     let uploadTasks = DispatchGroup()
+
+    let unwrappedRunEnvironment: RunEnvironment
+    if let runEnvironment = runEnvironment {
+      unwrappedRunEnvironment = runEnvironment
+    } else {
+      unwrappedRunEnvironment = EnvironmentValues(logger: logger).runEnvironment()
+    }
 
     return UploadClient(
       upload: { trace in
         uploadTasks.enter()
         defer { uploadTasks.leave() }
 
-        let testData = TestResults.json(runEnv: runEnvironment, data: [trace])
+        let testData = TestResults.json(runEnv: unwrappedRunEnvironment, data: [trace])
         logger?.debug("uploading \(testData)")
 
         do {

@@ -7,13 +7,20 @@ public struct TestCollector {
   /// Constructs a collector using the provided environment values
   ///
   /// - Parameters:
-  ///   - environment: The environment values.
+  ///   - environment: The environment values, `nil` to use the default `EnvironmentValues`.
   ///   - logger: A logger.
   init(
-    environment: EnvironmentValues = EnvironmentValues(),
+    environment: EnvironmentValues? = nil,
     logger: Logger? = nil
   ) {
-    guard environment.isAnalyticsEnabled else {
+    let unwrappedEnvironment: EnvironmentValues
+    if let environment = environment {
+      unwrappedEnvironment = environment
+    } else {
+      unwrappedEnvironment = EnvironmentValues(logger: logger)
+    }
+
+    guard unwrappedEnvironment.isAnalyticsEnabled else {
       logger?.info("TestCollector disabled. Test results will not be collected.")
       self.observer = nil
       return
@@ -22,9 +29,9 @@ public struct TestCollector {
     let tracer = Tracer.live()
 
     let uploader: UploadClient?
-    if let apiToken = environment.analyticsToken {
+    if let apiToken = unwrappedEnvironment.analyticsToken {
       let api = ApiClient.live(apiToken: apiToken)
-      let runEnvironment = environment.runEnvironment()
+      let runEnvironment = unwrappedEnvironment.runEnvironment()
       uploader = .live(api: api, logger: logger, runEnvironment: runEnvironment)
     } else {
       logger?.info("TestCollector unable to locate API key. Test results will not be uploaded.")
@@ -51,8 +58,10 @@ public struct TestCollector {
   /// an error  when using `swift test --list-tests` and `--parallel` on Linux.
   public static func load() {
     guard self.shared == nil else { return }
-    let environment = EnvironmentValues()
+    // Need to create environment first with nil logger since we need the environment to make a logger
+    var environment = EnvironmentValues(logger: nil)
     let logger = Logger(logLevel: environment.isAnalyticsDebugEnabled ? .debug : .info)
+    environment.logger = logger
     let collector = TestCollector(environment: environment, logger: logger)
     logger.waitForLogs() // Ensures logging is complete to avoid printing to stdout
     self.shared = collector
