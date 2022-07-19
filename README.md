@@ -103,7 +103,10 @@ git push origin add-buildkite-test-analytics
 
 ## 🔍 Debugging
 
-To enable debugging output, set the `BUILDKITE_ANALYTICS_DEBUG_ENABLED` environment variable to `true`.
+To enable debugging output, set the `BUILDKITE_ANALYTICS_DEBUG_ENABLED` environment variable to `true`. This also needs
+to be set in your test scheme or test plan if you're using an Xcode project.
+
+The library uses the presence/absence of certain environment variables to determine which CI platform it's running on, if you turn on debugging you'll see the library looking and not finding some of these keys, this is intended behaviour. Failing to find the values for your CI platform would indicate an issue though.
 
 ## 🔜 Roadmap
 

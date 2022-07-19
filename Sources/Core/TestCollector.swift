@@ -10,7 +10,7 @@ public struct TestCollector {
   ///   - environment: The environment values.
   ///   - logger: A logger.
   init(
-    environment: EnvironmentValues = EnvironmentValues(),
+    environment: EnvironmentValues,
     logger: Logger? = nil
   ) {
     guard environment.isAnalyticsEnabled else {
@@ -25,7 +25,7 @@ public struct TestCollector {
     if let apiToken = environment.analyticsToken {
       let api = ApiClient.live(apiToken: apiToken)
       let runEnvironment = environment.runEnvironment()
-      uploader = .live(api: api, logger: logger, runEnvironment: runEnvironment)
+      uploader = .live(api: api, runEnvironment: runEnvironment, logger: logger)
     } else {
       logger?.info("TestCollector unable to locate API key. Test results will not be uploaded.")
       uploader = nil
@@ -51,8 +51,10 @@ public struct TestCollector {
   /// an error  when using `swift test --list-tests` and `--parallel` on Linux.
   public static func load() {
     guard self.shared == nil else { return }
-    let environment = EnvironmentValues()
+    // Need to create environment first with nil logger since we need the environment to make a logger
+    var environment = EnvironmentValues(logger: nil)
     let logger = Logger(logLevel: environment.isAnalyticsDebugEnabled ? .debug : .info)
+    environment.logger = logger
     let collector = TestCollector(environment: environment, logger: logger)
     logger.waitForLogs() // Ensures logging is complete to avoid printing to stdout
     self.shared = collector
