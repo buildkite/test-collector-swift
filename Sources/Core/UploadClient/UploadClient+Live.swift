@@ -11,8 +11,8 @@ extension UploadClient {
   /// - Returns: A upload client that uses an api client.
   static func live(
     api: ApiClient,
-    logger: Logger? = nil,
-    runEnvironment: RunEnvironment = EnvironmentValues().runEnvironment()
+    runEnvironment: RunEnvironment,
+    logger: Logger? = nil
   ) -> UploadClient {
     let uploadTasks = DispatchGroup()
 
@@ -35,7 +35,7 @@ extension UploadClient {
           }
           logger?.debug("Uploaded \(result)")
         } catch {
-          logger?.error(error.localizedDescription)
+          logger?.error("Failed to upload result, got error: \(error.localizedDescription)")
           throw error
         }
       },
