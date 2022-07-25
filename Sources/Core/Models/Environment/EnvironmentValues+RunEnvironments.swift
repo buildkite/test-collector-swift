@@ -5,6 +5,7 @@ extension EnvironmentValues {
     let ciEnv = self.buildKite
       ?? self.gitHubActions
       ?? self.circleCi
+      ?? self.xcodeCloud
       ?? self.generic(key: defaultKey)
 
     return RunEnvironment(
@@ -93,6 +94,29 @@ extension EnvironmentValues {
       branch: self.gitHubRef,
       commitSha: self.gitHubSha,
       number: runNumber,
+      message: message
+    )
+  }
+
+  private var xcodeCloud: RunEnvironment? {
+    guard
+      let commitHash = self.xcodeCommitSha,
+      let buildNumber = self.xcodeBuildNumber,
+      let buildID = self.xcodeBuildID,
+      let workflowName = self.xcodeWorkflowName
+    else { return nil }
+
+    logger?.debug("Successfully found Xcode Cloud RunEnvironment")
+
+    let message = "Build #\(buildNumber) of workflow: \(workflowName)"
+
+    return RunEnvironment(
+      ci: "xcodeCloud",
+      key: buildID,
+      url: xcodePullRequestURL,
+      branch: xcodeBranch,
+      commitSha: commitHash,
+      number: buildNumber,
       message: message
     )
   }

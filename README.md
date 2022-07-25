@@ -4,7 +4,7 @@ Official [Buildkite Test Analytics](https://buildkite.com/test-analytics) collec
 
 ⚒ **Supported test frameworks:** XCTest, and [more coming soon](https://github.com/buildkite/test-collector-swift/labels/test%20framework).
 
-📦 **Supported CI systems:** Buildkite, GitHub Actions, CircleCI, and others via the `BUILDKITE_ANALYTICS_*` environment variables.
+📦 **Supported CI systems:** Buildkite, GitHub Actions, CircleCI, Xcode Cloud, and others via the `BUILDKITE_ANALYTICS_*` environment variables.
 
 ## 👉 Installing
 
@@ -50,7 +50,7 @@ key:
 value:
 `$(BUILDKITE_ANALYTICS_TOKEN)`
 
-The same key value pair can be specified in your main bundle's `info.plist` file if you would rather specify them there. Note variables in the environment take precedent over those in the `info.plist` file.
+The same key value pair can be specified in your main bundle's `info.plist` file if you would rather specify it there. Note variables in the environment take precedent over those in the `info.plist` file.
 
 ### Step 3.5 (Optional)
 
@@ -90,6 +90,17 @@ Key: GITHUB_RUN_ID, Value: $(GITHUB_RUN_ID)
 Key: GITHUB_SHA, Value: $(GITHUB_SHA)
 Key: GITHUB_WORKFLOW, Value: $(GITHUB_WORKFLOW)
 Key: GITHUB_ACTOR, Value: $(GITHUB_ACTOR)
+```
+
+**Xcode Cloud**
+
+```
+Key: CI_COMMIT, Value: $(CI_COMMIT)
+Key: CI_BUILD_NUMBER, Value: $(CI_BUILD_NUMBER)
+Key: CI_BUILD_ID, Value: $(CI_BUILD_ID)
+Key: CI_WORKFLOW, Value: $(CI_WORKFLOW)
+Key: CI_BRANCH, Value: $(CI_BRANCH)
+Key: CI_PULL_REQUEST_HTML_URL, Value: $(CI_PULL_REQUEST_HTML_URL)
 ```
 
 The same key value pairs can be specified in your main bundle's `info.plist` file if you would rather specify them there. Note variables in the environment take precedent over those in the `info.plist` file.
