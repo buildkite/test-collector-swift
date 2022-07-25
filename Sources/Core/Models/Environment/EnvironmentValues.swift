@@ -99,6 +99,8 @@ extension EnvironmentValues {
   var gitHubRepository: String? { self.string(for: "GITHUB_REPOSITORY") }
   var gitHubRunId: String? { self.string(for: "GITHUB_RUN_ID") }
   var gitHubSha: String? { self.string(for: "GITHUB_SHA") }
+  var githubWorkflowName: String? { self.string(for: "GITHUB_WORKFLOW") }
+  var githubWorkflowStartedBy: String? { self.string(for: "GITHUB_ACTOR") } 
 }
 
 private func getEnvironmentValue(key: String) -> String? {
