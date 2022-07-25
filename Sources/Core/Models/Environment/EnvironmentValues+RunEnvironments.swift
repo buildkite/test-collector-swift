@@ -108,7 +108,7 @@ extension EnvironmentValues {
 
     logger?.debug("Successfully found Xcode Cloud RunEnvironment")
 
-    let message = "Run #\(buildNumber) of workflow \(workflowName)"
+    let message = "Build #\(buildNumber) of workflow: \(workflowName)"
 
     return RunEnvironment(
       ci: "xcodeCloud",
