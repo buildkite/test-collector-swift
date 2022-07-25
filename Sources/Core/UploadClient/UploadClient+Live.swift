@@ -33,7 +33,7 @@ extension UploadClient {
               throw UploadError.unknown
             }
           }
-          logger?.debug("Uploaded \(result)")
+          logger?.debug("Finished Upload, got response: \(result)")
         } catch {
           logger?.error("Failed to upload result, got error: \(error.localizedDescription)")
           throw error
