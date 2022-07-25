@@ -88,6 +88,8 @@ Key: GITHUB_RUN_ATTEMPT, Value: $(GITHUB_RUN_ATTEMPT)
 Key: GITHUB_REPOSITORY, Value: $(GITHUB_REPOSITORY)
 Key: GITHUB_RUN_ID, Value: $(GITHUB_RUN_ID)
 Key: GITHUB_SHA, Value: $(GITHUB_SHA)
+Key: GITHUB_WORKFLOW, Value: $(GITHUB_WORKFLOW)
+Key: GITHUB_ACTOR, Value: $(GITHUB_ACTOR)
 ```
 
 The same key value pairs can be specified in your main bundle's `info.plist` file if you would rather specify them there. Note variables in the environment take precedent over those in the `info.plist` file.
