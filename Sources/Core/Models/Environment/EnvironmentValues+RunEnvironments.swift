@@ -53,7 +53,8 @@ extension EnvironmentValues {
       url: self.circleBuildUrl,
       branch: self.circleBranch,
       commitSha: self.circleSha,
-      number: buildNumber
+      number: buildNumber,
+      message: "Build #\(buildNumber) on branch \(self.circleBranch ?? "[Unknown branch]")"
     )
   }
 
