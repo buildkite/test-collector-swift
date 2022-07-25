@@ -106,7 +106,7 @@ extension EnvironmentValues {
   var xcodeBuildNumber: String? { self.string(for: "CI_BUILD_NUMBER") }
   var xcodeBuildID: String? { self.string(for: "CI_BUILD_ID") }
   var xcodeWorkflowName: String? { self.string(for: "CI_WORKFLOW") }
-  // Bellow here values may not be available in all contexts
+  // Bellow here values may not be available in all contexts, for example CI_PULL_REQUEST_HTML_URL is only available on pull requests
   var xcodeBranch: String? { self.string(for: "CI_BRANCH") }
   var xcodePullRequestURL: String? { self.string(for: "CI_PULL_REQUEST_HTML_URL") }
 
