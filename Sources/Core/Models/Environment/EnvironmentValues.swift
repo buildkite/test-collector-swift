@@ -100,7 +100,16 @@ extension EnvironmentValues {
   var gitHubRunId: String? { self.string(for: "GITHUB_RUN_ID") }
   var gitHubSha: String? { self.string(for: "GITHUB_SHA") }
   var githubWorkflowName: String? { self.string(for: "GITHUB_WORKFLOW") }
-  var githubWorkflowStartedBy: String? { self.string(for: "GITHUB_ACTOR") } 
+  var githubWorkflowStartedBy: String? { self.string(for: "GITHUB_ACTOR") }
+
+  var xcodeCommitSha: String? { self.string(for: "CI_COMMIT") }
+  var xcodeBuildNumber: String? { self.string(for: "CI_BUILD_NUMBER") }
+  var xcodeBuildID: String? { self.string(for: "CI_BUILD_ID") }
+  var xcodeWorkflowName: String? { self.string(for: "CI_WORKFLOW") }
+  // Bellow here values may not be available in all contexts
+  var xcodeBranch: String? { self.string(for: "CI_BRANCH") }
+  var xcodePullRequestURL: String? { self.string(for: "CI_PULL_REQUEST_HTML_URL") }
+
 }
 
 private func getEnvironmentValue(key: String) -> String? {
