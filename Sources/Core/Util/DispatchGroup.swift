@@ -1,16 +1,12 @@
 import Foundation
 
 extension DispatchGroup {
-  /// Gives queued async work time to enter the group before waiting synchronously for the previously submitted work to complete.
+  /// Waits synchronously for the previously submitted work to complete, and returns if the work is
+  /// not completed before the specified timeout period has elapsed.
   ///
   /// - Parameter timeout: The maximum duration in seconds to wait.
   /// - Returns: A result value indicating whether the method returned due to a timeout.
-  func yieldAndWait(timeout: TimeInterval) -> DispatchTimeoutResult {
-    let semaphore = DispatchSemaphore(value: 0)
-    DispatchQueue.global(qos: .background).async {
-      semaphore.signal()
-    }
-    semaphore.wait()
-    return self.wait(timeout: .now() + .milliseconds(Int(timeout * 1000)))
+  func wait(timeout seconds: TimeInterval) -> DispatchTimeoutResult {
+    self.wait(timeout: .now() + .milliseconds(Int(seconds * 1000)))
   }
 }
