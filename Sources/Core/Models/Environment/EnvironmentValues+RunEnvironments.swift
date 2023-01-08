@@ -93,7 +93,7 @@ extension EnvironmentValues {
       ci: "github_actions",
       key: "\(action)-\(runNumber)-\(runAttempt)",
       url: url,
-      branch: self.gitHubRef,
+      branch: self.gitHubRefName,
       commitSha: self.gitHubSha,
       number: runNumber,
       message: message
