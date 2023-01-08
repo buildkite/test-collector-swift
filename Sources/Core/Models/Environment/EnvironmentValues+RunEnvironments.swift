@@ -18,6 +18,8 @@ extension EnvironmentValues {
       jobId: self.analyticsJobId ?? ciEnv?.jobId,
       message: self.analyticsMessage ?? ciEnv?.message,
       debug: self.isAnalyticsDebugEnabled ? "true" : nil,
+      executionNamePrefix: self.executionNamePrefix,
+      executionNameSuffix: self.executionNameSuffix,
       version: TestCollector.version,
       collector: TestCollector.name
     )
