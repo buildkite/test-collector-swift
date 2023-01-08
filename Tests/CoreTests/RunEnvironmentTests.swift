@@ -62,7 +62,7 @@ final class RunEnvironmentTests: XCTestCase {
     let environmentValues = EnvironmentValues(
       values: [
         "GITHUB_ACTION": "action",
-        "GITHUB_REF": "main",
+        "GITHUB_REF_NAME": "main",
         "GITHUB_RUN_NUMBER": "runNumber",
         "GITHUB_RUN_ATTEMPT": "runAttempt",
         "GITHUB_REPOSITORY": "repository",
