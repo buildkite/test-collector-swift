@@ -12,8 +12,7 @@ final class RunEnvironmentTests: XCTestCase {
         "BUILDKITE_BUILD_NUMBER": "buildNumber",
         "BUILDKITE_JOB_ID": "jobId",
         "BUILDKITE_MESSAGE": "message",
-      ],
-      getFromEnvironment: { _ in nil }
+      ]
     )
 
     XCTAssertEqual(
@@ -41,8 +40,7 @@ final class RunEnvironmentTests: XCTestCase {
         "CIRCLE_BUILD_URL": "buildUrl",
         "CIRCLE_BRANCH": "main",
         "CIRCLE_SHA1": "commitSha",
-      ],
-      getFromEnvironment: { _ in nil }
+      ]
     )
     XCTAssertEqual(
       environmentValues.runEnvironment(),
@@ -64,7 +62,7 @@ final class RunEnvironmentTests: XCTestCase {
     let environmentValues = EnvironmentValues(
       values: [
         "GITHUB_ACTION": "action",
-        "GITHUB_REF_NAME": "main",
+        "GITHUB_REF": "main",
         "GITHUB_RUN_NUMBER": "runNumber",
         "GITHUB_RUN_ATTEMPT": "runAttempt",
         "GITHUB_REPOSITORY": "repository",
@@ -72,8 +70,7 @@ final class RunEnvironmentTests: XCTestCase {
         "GITHUB_SHA": "commitSha",
         "GITHUB_WORKFLOW": "workflowName",
         "GITHUB_ACTOR": "username",
-      ],
-      getFromEnvironment: { _ in nil }
+      ]
     )
 
     XCTAssertEqual(
@@ -101,8 +98,7 @@ final class RunEnvironmentTests: XCTestCase {
         "CI_WORKFLOW": "workflowName",
         "CI_BRANCH": "main",
         "CI_PULL_REQUEST_HTML_URL": "pullRequestUrl",
-      ],
-      getFromEnvironment: { _ in nil }
+      ]
     )
 
     XCTAssertEqual(
