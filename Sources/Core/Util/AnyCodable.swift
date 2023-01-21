@@ -1,3 +1,5 @@
+import Foundation
+
 ///  A type-erased codable value.
 struct AnyCodable {
   var base: Any
@@ -19,7 +21,9 @@ extension AnyCodable: Decodable {
   init(from decoder: Decoder) throws {
     let container = try decoder.singleValueContainer()
 
-    if let value = try? container.decode(Bool.self) {
+    if container.decodeNil() {
+      self.init(NSNull())
+    } else if let value = try? container.decode(Bool.self) {
       self.init(value)
     } else if let value = try? container.decode(Int.self) {
       self.init(value)
@@ -46,6 +50,9 @@ extension AnyCodable: Decodable {
 extension AnyCodable: Encodable {
   func encode(to encoder: Encoder) throws {
     switch self.base {
+    case is NSNull:
+      var container = encoder.singleValueContainer()
+      try container.encodeNil()
     case let value as [Any]:
       try value.map(AnyCodable.init).encode(to: encoder)
     case let value as [String: Any]:
@@ -66,13 +73,20 @@ extension AnyCodable: Encodable {
 
 extension AnyCodable: CustomStringConvertible {
   var description: String {
-    String(describing: self.base)
+    if self.base is Void { return "nil" }
+    return String(describing: self.base)
   }
 }
 
 extension AnyCodable: Equatable {
   static func == (lhs: AnyCodable, rhs: AnyCodable) -> Bool {
     isEqual(lhs.base, rhs.base)
+  }
+}
+
+extension AnyCodable: ExpressibleByNilLiteral {
+  init(nilLiteral: ()) {
+    self.init(NSNull())
   }
 }
 

@@ -15,7 +15,8 @@ class AnyCodableTests: XCTestCase {
       "dictionary": {
         "0": "foo",
         "1": "bar"
-      }
+      },
+      "nil": null
     }
     """#.data(using: .utf8)!
 
@@ -27,6 +28,7 @@ class AnyCodableTests: XCTestCase {
     XCTAssertEqual(output["string"]?.base as? String, "Blob")
     XCTAssertEqual(output["array"]?.base as? [String], ["A", "B", "C"])
     XCTAssertEqual(output["dictionary"]?.base as? [String: String], ["0": "foo", "1": "bar"])
+    XCTAssertEqual(output["nil"]?.base as? NSNull, NSNull())
 
     XCTAssertEqual(
       output,
@@ -37,6 +39,7 @@ class AnyCodableTests: XCTestCase {
         "string": "Blob",
         "array": ["A", "B", "C"],
         "dictionary": ["0": "foo", "1": "bar"],
+        "nil": nil,
       ]
     )
   }
@@ -51,6 +54,7 @@ class AnyCodableTests: XCTestCase {
       "string": "Blob",
       "array": ["A", "B", "C"],
       "dictionary": ["0": "foo", "1": "bar"],
+      "nil": nil,
     ]
 
     let data = try encoder.encode(input)
@@ -65,6 +69,7 @@ class AnyCodableTests: XCTestCase {
         "string": "Blob",
         "array": ["A", "B", "C"],
         "dictionary": ["0": "foo", "1": "bar"],
+        "nil": NSNull(),
       ]
     )
   }
