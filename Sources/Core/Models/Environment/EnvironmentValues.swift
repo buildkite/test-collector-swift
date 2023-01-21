@@ -24,47 +24,42 @@ struct EnvironmentValues {
     self.string(for: key).flatMap { NSString(string: $0).boolValue }
   }
 
-  func string(for key: String, redactInLogs: Bool = false) -> String? {
-    let customDictionaryValue = self.values[key]
-    logger?.debug(debugMessage(key: key, value: customDictionaryValue, location: "CustomDictionaryValue", redactValue: redactInLogs))
-    if let value = customDictionaryValue {
-      return value.trimmingCharacters(in: .whitespacesAndNewlines)
+  func dictionary(for key: String) -> [String: AnyCodable]? {
+    guard let string = self.string(for: key) else { return nil }
+    guard
+      let data = string.data(using: .utf8),
+      let value = try? JSONDecoder().decode([String: AnyCodable].self, from: data)
+    else {
+      self.logger?.error("\(key) is not a valid json object")
+      return nil
     }
-
-    let environmentValue = self.getFromEnvironment(key)
-    logger?.debug(debugMessage(key: key, value: environmentValue, location: "environment", redactValue: redactInLogs))
-    if let value = environmentValue {
-      return value.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    let infoDictionaryValue = self.getFromInfoDictionary(key)
-    logger?.debug(debugMessage(key: key, value: infoDictionaryValue, location: "info dictionary", redactValue: redactInLogs))
-    if let value = infoDictionaryValue {
-      return value.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    return nil
+    return value
   }
 
-  private func debugMessage(key: String, value: String?, location: String, redactValue: Bool) -> String {
-    let valueDescription: String
-    if let value = value {
-      if redactValue {
-        valueDescription = "[Redacted]"
-      } else {
-        valueDescription = value
-      }
-    } else {
-      valueDescription = "nil"
+  func string(for key: String, private: Bool = false) -> String? {
+    func description(for value: String) -> String {
+      `private` ? "<redacted>" : value
     }
 
-    return "Looked in \(location) for \(key), found: \(valueDescription)"
+    if let value = self.values[key]?.trimmed() {
+      self.logger?.debug("\(key)=\(description(for: value)) (from values)")
+      return value
+    } else if let value = self.getFromEnvironment(key)?.trimmed() {
+      self.logger?.debug("\(key)=\(description(for: value)) (from environment)")
+      return value
+    } else if let value = self.getFromInfoDictionary(key)?.trimmed() {
+      self.logger?.debug("\(key)=\(description(for: value)) (from Info.plist)")
+      return value
+    } else {
+      self.logger?.debug("No value found for \(key)")
+      return nil
+    }
   }
 }
 
 extension EnvironmentValues {
   var isAnalyticsEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_ENABLED") ?? true }
-  var analyticsToken: String? { self.string(for: "BUILDKITE_ANALYTICS_TOKEN", redactInLogs: true) }
+  var analyticsToken: String? { self.string(for: "BUILDKITE_ANALYTICS_TOKEN", private: true) }
 
   var isAnalyticsDebugEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_DEBUG_ENABLED") ?? false }
 
@@ -92,9 +87,13 @@ extension EnvironmentValues {
   var circleBranch: String? { self.string(for: "CIRCLE_BRANCH") }
   var circleSha: String? { self.string(for: "CIRCLE_SHA1") }
 
+  var customEnvironment: [String: AnyCodable]? {
+    self.dictionary(for: "BUILDKITE_ANALYTICS_ENVIRONMENT")
+  }
+
   var executionNamePrefix: String? { self.string(for: "BUILDKITE_ANALYTICS_EXECUTION_NAME_PREFIX") }
   var executionNameSuffix: String? { self.string(for: "BUILDKITE_ANALYTICS_EXECUTION_NAME_SUFFIX") }
-  
+
   var gitHubAction: String? { self.string(for: "GITHUB_ACTION") }
   var gitHubRefName: String? { self.string(for: "GITHUB_REF_NAME") }
   var gitHubRunNumber: String? { self.string(for: "GITHUB_RUN_NUMBER") }
@@ -109,10 +108,10 @@ extension EnvironmentValues {
   var xcodeBuildNumber: String? { self.string(for: "CI_BUILD_NUMBER") }
   var xcodeBuildId: String? { self.string(for: "CI_BUILD_ID") }
   var xcodeWorkflowName: String? { self.string(for: "CI_WORKFLOW") }
-  // Bellow here values may not be available in all contexts, for example CI_PULL_REQUEST_HTML_URL is only available on pull requests
+  // Bellow here values may not be available in all contexts, for example CI_PULL_REQUEST_HTML_URL is only available on
+  // pull requests
   var xcodeBranch: String? { self.string(for: "CI_BRANCH") }
   var xcodePullRequestURL: String? { self.string(for: "CI_PULL_REQUEST_HTML_URL") }
-
 }
 
 private func getEnvironmentValue(key: String) -> String? {
@@ -121,4 +120,12 @@ private func getEnvironmentValue(key: String) -> String? {
 
 private func getInfoDictionaryValue(key: String) -> String? {
   Bundle.main.infoDictionary?[key] as? String
+}
+
+extension String {
+  /// Trims whitespace from both ends of a string, if the resulting string is empty, returns `nil`
+  fileprivate func trimmed() -> String? {
+    let result = self.trimmingCharacters(in: .whitespacesAndNewlines)
+    return result.isEmpty ? nil : result
+  }
 }
