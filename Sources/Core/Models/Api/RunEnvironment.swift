@@ -42,7 +42,7 @@ struct RunEnvironment: Equatable {
   var collector: String?
 
   /// A dictionary that contains custom values associated with the test run.
-  /// 
+  ///
   /// - Note: Used internally for testing experimental features. If an existing key
   /// is used, the custom environment value will take precedence.
   var customEnvironment: [String: AnyCodable]?

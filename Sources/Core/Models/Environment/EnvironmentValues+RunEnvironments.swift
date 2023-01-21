@@ -26,7 +26,7 @@ extension EnvironmentValues {
     )
 
     logger?.debug("\(runEnvironment)")
-    
+
     return runEnvironment
   }
 

@@ -123,7 +123,7 @@ private func getInfoDictionaryValue(key: String) -> String? {
 }
 
 extension String {
-  /// Trims whitespace from both ends of a string, if the resulting string is empty, returns `nil`
+  /// Trims whitespace from both ends of a string, if the resulting string is empty, returns `nil`.
   fileprivate func trimmed() -> String? {
     let result = self.trimmingCharacters(in: .whitespacesAndNewlines)
     return result.isEmpty ? nil : result
