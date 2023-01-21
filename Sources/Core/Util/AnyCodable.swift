@@ -11,7 +11,7 @@ struct AnyCodable {
     self.base = base
   }
 
-  /// Used for converting arrays and dictionaries
+  /// Used for converting arrays and dictionaries.
   fileprivate init(_ base: Any) {
     self.base = base
   }
