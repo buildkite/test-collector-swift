@@ -15,7 +15,7 @@ extension UploadClient {
     api: ApiClient,
     runEnvironment: RunEnvironment,
     logger: Logger? = nil,
-    batchSize: Int = 5000,
+    batchSize: Int = maximumBatchSize,
     group: DispatchGroup = DispatchGroup()
   ) -> UploadClient {
     let client = LiveClient(
@@ -92,3 +92,6 @@ extension UploadClient {
     }
   }
 }
+
+// The maximum number of traces that can be sent per upload
+private let maximumBatchSize = 5000
