@@ -25,14 +25,14 @@ struct UploadClient {
     self.waitForUploads = waitForUploads
   }
 
-  /// Uploads a trace.
+  /// Records a trace to be included in the next upload.
   ///
-  /// - Parameter trace: The trace to upload
+  /// - Parameter trace: The trace to record
   func record(trace: Trace) {
     self.record(trace)
   }
 
-  /// Waits synchronously for the previously submitted uploads to complete.
+  /// Waits synchronously for the previously submitted traces to be uploaded.
   ///
   /// - Parameter timeout: The maximum duration in seconds to wait for uploads to complete.
   func waitForUploads(timeout: TimeInterval = twoMinutes) {
