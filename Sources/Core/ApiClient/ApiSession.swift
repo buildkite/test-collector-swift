@@ -25,7 +25,6 @@ extension ApiSession {
       let cancel: () -> Void = { dataTask?.cancel() }
 
       return try await withTaskCancellationHandler(
-        handler: { cancel() },
         operation: {
           try await withCheckedThrowingContinuation { continuation in
             dataTask = session.dataTask(with: request) { data, response, error in
@@ -37,7 +36,8 @@ extension ApiSession {
             }
             dataTask?.resume()
           }
-        }
+        },
+        onCancel: { cancel() }
       )
     }
   }
