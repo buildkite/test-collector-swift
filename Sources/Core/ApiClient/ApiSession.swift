@@ -25,19 +25,19 @@ extension ApiSession {
       let cancel: () -> Void = { dataTask?.cancel() }
 
       return try await withTaskCancellationHandler(
-        handler: { cancel() },
         operation: {
-          try await withCheckedThrowingContinuation { continuation in
-            dataTask = session.dataTask(with: request) { data, response, error in
-              if let data = data, let response = response {
-                continuation.resume(returning: (data, response))
-              } else {
-                continuation.resume(throwing: error ?? URLError(.badServerResponse))
-              }
+            try await withCheckedThrowingContinuation { continuation in
+                dataTask = session.dataTask(with: request) { data, response, error in
+                    if let data = data, let response = response {
+                        continuation.resume(returning: (data, response))
+                    } else {
+                        continuation.resume(throwing: error ?? URLError(.badServerResponse))
+                    }
+                }
+                dataTask?.resume()
             }
-            dataTask?.resume()
-          }
-        }
+        },
+        onCancel: { cancel() }
       )
     }
   }
