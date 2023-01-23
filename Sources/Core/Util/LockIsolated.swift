@@ -10,30 +10,20 @@ final class LockIsolated<Value>: @unchecked Sendable {
   }
 
   var value: Value {
-    _read {
-      self.lock.lock()
-      defer { self.lock.unlock() }
-      yield self._value
-    }
-    _modify {
-      self.lock.lock()
-      defer { self.lock.unlock() }
-      yield &self._value
-    }
+    self.withValue { $0 }
   }
 
   subscript<Subject: Sendable>(dynamicMember keyPath: KeyPath<Value, Subject>) -> Subject {
-    _read { yield self.value[keyPath: keyPath] }
+    self.withValue { $0[keyPath: keyPath] }
   }
 
-  subscript<Subject: Sendable>(dynamicMember keyPath: WritableKeyPath<Value, Subject>) -> Subject {
-    _read { yield self._value[keyPath: keyPath] }
-    _modify { yield &self._value[keyPath: keyPath] }
+  func withValue<T: Sendable>(_ operation: (inout Value) throws -> T) rethrows -> T {
+    self.lock.lock()
+    defer { self.lock.unlock() }
+    return try operation(&self._value)
   }
-}
 
-extension LockIsolated: Equatable where Value: Equatable {
-  static func == (lhs: LockIsolated, rhs: LockIsolated) -> Bool {
-    lhs.value == rhs.value
+  func setValue(_ newValue: Value) {
+    self.withValue { $0 = newValue }
   }
 }
