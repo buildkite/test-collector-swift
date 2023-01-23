@@ -14,24 +14,22 @@ struct UploadClient {
     }
   }
 
-  private var upload: (Trace) -> Task<Void, Error>
+  private var record: (Trace) -> Void
   private var waitForUploads: (TimeInterval) -> Void
 
   init(
-    upload: @escaping (Trace) -> Task<Void, Error>,
+    record: @escaping (Trace) -> Void,
     waitForUploads: @escaping (TimeInterval) -> Void
   ) {
-    self.upload = upload
+    self.record = record
     self.waitForUploads = waitForUploads
   }
 
   /// Uploads a trace.
   ///
   /// - Parameter trace: The trace to upload
-  /// - Returns: A `Task` responsible for performing the upload.
-  @discardableResult
-  func upload(trace: Trace) -> Task<Void, Error> {
-    self.upload(trace)
+  func record(trace: Trace) {
+    self.record(trace)
   }
 
   /// Waits synchronously for the previously submitted uploads to complete.
