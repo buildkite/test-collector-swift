@@ -13,11 +13,11 @@ final class LockIsolated<Value>: @unchecked Sendable {
     self.withValue { $0 }
   }
 
-  subscript<Subject: Sendable>(dynamicMember keyPath: KeyPath<Value, Subject>) -> Subject {
+  subscript<Subject>(dynamicMember keyPath: KeyPath<Value, Subject>) -> Subject {
     self.withValue { $0[keyPath: keyPath] }
   }
 
-  func withValue<T: Sendable>(_ operation: (inout Value) throws -> T) rethrows -> T {
+  func withValue<T>(_ operation: (inout Value) throws -> T) rethrows -> T {
     self.lock.lock()
     defer { self.lock.unlock() }
     return try operation(&self._value)
