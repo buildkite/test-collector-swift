@@ -1,5 +1,7 @@
 import Core
 
 public enum TestCollector {
-  // TODO: Add public api
+  public static var baseUrl: String {
+    Core.TestCollector.baseURL
+  }
 }
