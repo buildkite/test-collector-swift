@@ -7,7 +7,7 @@ import FoundationNetworking
 extension ApiClient {
   static func live(
     apiToken: String,
-    baseUrl: URL = URL(string: "https://analytics-api.buildkite.com/v1/")!,
+    baseUrl: URL,
     encoder: JSONEncoder = .init(),
     decoder: JSONDecoder = .init(),
     session: ApiSession = .urlSession(.shared)

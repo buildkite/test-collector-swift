@@ -13,7 +13,11 @@ final class ApiClientTests: XCTestCase {
       requests.append(request)
       return ("{\"status\":\"OK\"}".data(using: .utf8)!, .stub())
     }
-    let api = ApiClient.live(apiToken: "token", session: session)
+    let api = ApiClient.live(
+      apiToken: "token",
+      baseUrl: URL(string: "http://api.test.com/")!,
+      session: session
+    )
     let results = TestResults.json(runEnv: .init(key: "key"), data: [])
 
     let (value, _) = try await api.data(for: .upload(results), as: Response.self)
@@ -21,7 +25,7 @@ final class ApiClientTests: XCTestCase {
     XCTAssertEqual(value.status, "OK")
     XCTAssertEqual(requests.count, 1)
     let request = try XCTUnwrap(requests.first)
-    XCTAssertEqual(request.url?.absoluteString, "https://analytics-api.buildkite.com/v1/uploads")
+    XCTAssertEqual(request.url?.absoluteString, "http://api.test.com/uploads")
     XCTAssertEqual(request.authorizationHeader, "Token token=\"token\"")
     XCTAssertEqual(request.httpMethod, "POST")
     XCTAssertEqual(

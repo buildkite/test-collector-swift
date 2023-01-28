@@ -21,19 +21,19 @@ struct EnvironmentValues {
   }
 
   func bool(for key: String) -> Bool? {
-    self.string(for: key).flatMap { NSString(string: $0).boolValue }
+    self.string(for: key).map { NSString(string: $0).boolValue }
   }
 
   func dictionary(for key: String) -> [String: AnyCodable]? {
     guard let string = self.string(for: key) else { return nil }
     guard
       let data = string.data(using: .utf8),
-      let value = try? JSONDecoder().decode([String: AnyCodable].self, from: data)
+      let dictionary = try? JSONDecoder().decode([String: AnyCodable].self, from: data)
     else {
       self.logger?.error("\(key) is not a valid json object")
       return nil
     }
-    return value
+    return dictionary
   }
 
   func string(for key: String, private: Bool = false) -> String? {
@@ -55,11 +55,21 @@ struct EnvironmentValues {
       return nil
     }
   }
+
+  func url(for key: String) -> URL? {
+    guard let string = self.string(for: key) else { return nil }
+    guard let url = URL(string: string) else {
+      self.logger?.error("\(key) is not a valid url")
+      return nil
+    }
+    return url
+  }
 }
 
 extension EnvironmentValues {
   var isAnalyticsEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_ENABLED") ?? true }
   var analyticsToken: String? { self.string(for: "BUILDKITE_ANALYTICS_TOKEN", private: true) }
+  var analyticsBaseUrl: URL? { self.url(for: "BUILDKITE_ANALYTICS_BASE_URL") }
 
   var isAnalyticsDebugEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_DEBUG_ENABLED") ?? false }
 
@@ -108,8 +118,8 @@ extension EnvironmentValues {
   var xcodeBuildNumber: String? { self.string(for: "CI_BUILD_NUMBER") }
   var xcodeBuildId: String? { self.string(for: "CI_BUILD_ID") }
   var xcodeWorkflowName: String? { self.string(for: "CI_WORKFLOW") }
-  // Bellow here values may not be available in all contexts, for example CI_PULL_REQUEST_HTML_URL is only available on
-  // pull requests
+  // Bellow here values may not be available in all contexts, for example CI_PULL_REQUEST_HTML_URL
+  // is only available on pull requests
   var xcodeBranch: String? { self.string(for: "CI_BRANCH") }
   var xcodePullRequestURL: String? { self.string(for: "CI_PULL_REQUEST_HTML_URL") }
 }
