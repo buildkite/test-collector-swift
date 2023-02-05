@@ -1,21 +1,23 @@
 import XCTest
 
 extension XCTestCase {
-  /// The name of the class containing the test.
-  var caseName: String { "\(type(of: self))" }
+  /// Returns the class name of the test.
+  static func className(of testCase: XCTestCase) -> String {
+    "\(type(of: testCase))"
+  }
 
-  /// The name of the test.
-  var testName: String {
+  /// Returns the name of the test.
+  static func testName(of testCase: XCTestCase) -> String {
     #if canImport(ObjectiveC)
     // [XCTestCase testName]
     return String(
-      self.name
+      testCase.name
         .split(separator: " ", maxSplits: 1).last!
-        .dropLast(self.name.last == "]" ? 1 : 0)
+        .dropLast(testCase.name.last == "]" ? 1 : 0)
     )
     #else
     // XCTestCase.testName
-    return String(self.name.split(separator: ".").last!)
+    return String(testCase.name.split(separator: ".").last!)
     #endif
   }
 }

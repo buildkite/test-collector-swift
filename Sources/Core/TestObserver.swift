@@ -39,8 +39,8 @@ class TestObserver: NSObject, XCTestObservation {
     self.spanId = self.tracer.startSpan(section: "top")
     self.test = TestState(
       id: self.uuid(),
-      className: testCase.caseName,
-      testName: testCase.testName
+      className: XCTestCase.className(of: testCase),
+      testName: XCTestCase.testName(of: testCase)
     )
   }
 
