@@ -1,4 +1,4 @@
-@testable import DemoLibrary
+import DemoLibrary
 import XCTest
 
 final class DemoLibraryTests: XCTestCase {
