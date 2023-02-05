@@ -3,10 +3,10 @@ import XCTest
 
 class XCTestHelpersTests: XCTestCase {
   func testTestName() {
-    XCTAssertEqual("testTestName", self.testName)
+    XCTAssertEqual("testTestName", XCTestCase.testName(of: self))
   }
 
-  func testCaseName() {
-    XCTAssertEqual("XCTestHelpersTests", self.caseName)
+  func testClassName() {
+    XCTAssertEqual("XCTestHelpersTests", XCTestCase.className(of: self))
   }
 }
