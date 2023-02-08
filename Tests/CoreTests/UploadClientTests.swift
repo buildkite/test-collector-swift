@@ -11,8 +11,7 @@ final class UploadClientTests: XCTestCase {
     let uploadClient = UploadClient.live(api: .fulfill(uploadCompleted, after: 0.5), runEnvironment: EnvironmentValues().runEnvironment())
     let trace = Trace(id: "id", history: .init(section: "section"))
 
-    Task { try await uploadClient.upload(trace: trace) }
-    self.sleep(for: 0.01)
+    uploadClient.upload(trace: trace)
     uploadClient.waitForUploads()
 
     self.wait(for: [uploadCompleted], timeout: 0)
@@ -24,8 +23,7 @@ final class UploadClientTests: XCTestCase {
     let uploadClient = UploadClient.live(api: .fulfill(uploadCompleted, after: 0.5), runEnvironment: EnvironmentValues().runEnvironment())
     let trace = Trace(id: "id", history: .init(section: "section"))
 
-    let task = Task { try await uploadClient.upload(trace: trace) }
-    self.sleep(for: 0.01)
+    let task = uploadClient.upload(trace: trace)
     uploadClient.waitForUploads(timeout: 0.1)
     task.cancel()
 
@@ -38,7 +36,7 @@ final class UploadClientTests: XCTestCase {
     let uploadClient = UploadClient.live(api: api, runEnvironment: EnvironmentValues().runEnvironment())
     let trace = Trace(id: "id", history: .init(section: "section"))
 
-    let task = Task { try await uploadClient.upload(trace: trace) }
+    let task = uploadClient.upload(trace: trace)
     let result = await task.result
 
     XCTAssertThrowsError(try result.get()) { error in
