@@ -9,14 +9,13 @@ final class UploadClientTests: XCTestCase {
   func testWaitSynchronouslyForUploads() throws {
     let uploadCompleted = self.expectation(description: "upload completed")
     let uploadClient = UploadClient.live(api: .fulfill(uploadCompleted, after: 0.5), runEnvironment: EnvironmentValues().runEnvironment())
-    let trace = Trace(id: "id", history: .init(section: "section"))
+    let trace = Trace(id: "id", identifier: "identifier", history: .init(section: "section"))
 
     uploadClient.upload(trace: trace)
     uploadClient.waitForUploads()
 
     self.wait(for: [uploadCompleted], timeout: 0)
   }
-
   func testWaitShouldTimeout() throws {
     let uploadCompleted = self.expectation(description: "upload completed")
     uploadCompleted.isInverted = true
