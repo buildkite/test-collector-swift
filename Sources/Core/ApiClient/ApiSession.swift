@@ -28,7 +28,7 @@ extension ApiSession {
         operation: {
           try await withCheckedThrowingContinuation { continuation in
             dataTask = session.dataTask(with: request) { data, response, error in
-              if let data, let response {
+              if let data = data, let response = response {
                 continuation.resume(returning: (data, response))
               } else {
                 continuation.resume(throwing: error ?? URLError(.badServerResponse))
