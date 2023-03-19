@@ -2,7 +2,7 @@ import Foundation
 
 extension EnvironmentValues {
   func runEnvironment(defaultKey: String = UUID().uuidString) -> RunEnvironment {
-    let ciEnv = self.buildKite
+    let ciEnv = self.buildkite
       ?? self.gitHubActions
       ?? self.circleCi
       ?? self.xcodeCloud
@@ -18,12 +18,14 @@ extension EnvironmentValues {
       jobId: self.analyticsJobId ?? ciEnv?.jobId,
       message: self.analyticsMessage ?? ciEnv?.message,
       debug: self.isAnalyticsDebugEnabled ? "true" : nil,
+      executionNamePrefix: self.executionNamePrefix,
+      executionNameSuffix: self.executionNameSuffix,
       version: TestCollector.version,
       collector: TestCollector.name
     )
   }
 
-  private var buildKite: RunEnvironment? {
+  private var buildkite: RunEnvironment? {
     guard let buildId = self.buildkiteBuildId else { return nil }
 
     logger?.debug("Successfully found Buildkite RunEnvironment")
@@ -102,7 +104,7 @@ extension EnvironmentValues {
     guard
       let commitHash = self.xcodeCommitSha,
       let buildNumber = self.xcodeBuildNumber,
-      let buildID = self.xcodeBuildID,
+      let buildID = self.xcodeBuildId,
       let workflowName = self.xcodeWorkflowName
     else { return nil }
 
@@ -113,8 +115,8 @@ extension EnvironmentValues {
     return RunEnvironment(
       ci: "xcodeCloud",
       key: buildID,
-      url: xcodePullRequestURL,
-      branch: xcodeBranch,
+      url: self.xcodePullRequestURL,
+      branch: self.xcodeBranch,
       commitSha: commitHash,
       number: buildNumber,
       message: message
