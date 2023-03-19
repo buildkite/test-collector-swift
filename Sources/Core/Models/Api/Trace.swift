@@ -13,9 +13,6 @@ struct Trace: Equatable {
   /// In XCTest this is usually a method of an XCTestCase.
   var name: String?
 
-  /// The identifier of the test.
-  var identifier: String?
-
   /// The source location of the test.
   var location: String?
 
@@ -40,7 +37,6 @@ extension Trace: Encodable {
     case id
     case scope
     case name
-    case identifier
     case location
     case fileName = "file_name"
     case result
@@ -55,7 +51,6 @@ extension Trace {
     self.id = test.id.uuidString
     self.scope = test.className
     self.name = test.testName
-    self.identifier = "\(test.className).\(test.testName)"
     self.result = test.result.map(Trace.Result.init) ?? .failed
     self.failureReason = test.issues.first?.compactDescription
     self.failureExpanded = test.issues.map(Trace.FailureExpanded.init(issue:))
