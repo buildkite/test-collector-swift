@@ -92,8 +92,11 @@ extension EnvironmentValues {
   var circleBranch: String? { self.string(for: "CIRCLE_BRANCH") }
   var circleSha: String? { self.string(for: "CIRCLE_SHA1") }
 
+  var executionNamePrefix: String? { self.string(for: "BUILDKITE_ANALYTICS_EXECUTION_NAME_PREFIX") }
+  var executionNameSuffix: String? { self.string(for: "BUILDKITE_ANALYTICS_EXECUTION_NAME_SUFFIX") }
+  
   var gitHubAction: String? { self.string(for: "GITHUB_ACTION") }
-  var gitHubRef: String? { self.string(for: "GITHUB_REF") }
+  var gitHubRefName: String? { self.string(for: "GITHUB_REF_NAME") }
   var gitHubRunNumber: String? { self.string(for: "GITHUB_RUN_NUMBER") }
   var gitHubRunAttempt: String? { self.string(for: "GITHUB_RUN_ATTEMPT") }
   var gitHubRepository: String? { self.string(for: "GITHUB_REPOSITORY") }
@@ -104,7 +107,7 @@ extension EnvironmentValues {
 
   var xcodeCommitSha: String? { self.string(for: "CI_COMMIT") }
   var xcodeBuildNumber: String? { self.string(for: "CI_BUILD_NUMBER") }
-  var xcodeBuildID: String? { self.string(for: "CI_BUILD_ID") }
+  var xcodeBuildId: String? { self.string(for: "CI_BUILD_ID") }
   var xcodeWorkflowName: String? { self.string(for: "CI_WORKFLOW") }
   // Bellow here values may not be available in all contexts, for example CI_PULL_REQUEST_HTML_URL is only available on pull requests
   var xcodeBranch: String? { self.string(for: "CI_BRANCH") }

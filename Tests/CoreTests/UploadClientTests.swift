@@ -76,7 +76,7 @@ final class UploadClientTests: XCTestCase {
     for id in 1...4999 {
       uploadClient.record(trace: .mock(id: "\(id)"))
     }
-    
+
     // Wait to make sure no uploads were started
     XCTAssertEqual(uploadTasks.wait(timeout: 0.1), .success)
     XCTAssertEqual(testResults.count, 0)
@@ -100,7 +100,7 @@ final class UploadClientTests: XCTestCase {
 
     // Uploads any remaining traces regardless of batch size
     uploadClient.waitForUploads()
-    
+
     XCTAssertEqual(testResults.count, 3)
     XCTAssertEqual(testResults[0].data.map(\.id), (1...5000).map { "\($0)" })
     XCTAssertEqual(testResults[1].data.map(\.id), (5001...10000).map { "\($0)" })

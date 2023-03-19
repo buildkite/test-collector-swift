@@ -39,8 +39,8 @@ class TestObserver: NSObject, XCTestObservation {
     self.spanId = self.tracer.startSpan(section: "top")
     self.test = TestState(
       id: self.uuid(),
-      className: testCase.caseName,
-      testName: testCase.testName
+      className: XCTestCase.className(of: testCase),
+      testName: XCTestCase.testName(of: testCase)
     )
   }
 
@@ -99,7 +99,8 @@ class TestObserver: NSObject, XCTestObservation {
   ///
   /// Called exactly once per test bundle.
   ///
-  /// - Note: The test process will generally exit after this method returns, so it must block until all asynchronous work is complete.
+  /// - Note: The test process will generally exit after this method returns, so it must block until all asynchronous
+  /// work is complete.
   func testBundleDidFinish(_ testBundle: Bundle) {
     self.uploader?.waitForUploads()
     self.logger?.waitForLogs()

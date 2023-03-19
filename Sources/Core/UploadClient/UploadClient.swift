@@ -8,7 +8,7 @@ struct UploadClient {
 
     var errorDescription: String? {
       switch self {
-      case .error(let message): return message
+      case let .error(message): return message
       case .unknown: return "Unknown Error"
       }
     }
