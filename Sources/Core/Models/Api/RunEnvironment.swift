@@ -29,6 +29,12 @@ struct RunEnvironment: Equatable {
   /// A value indicating if the collector ran in debug mode.
   var debug: String?
 
+  /// A tag added to the start of the execution name
+  var executionNamePrefix: String?
+
+  /// A tag added to the end of the execution name
+  var executionNameSuffix: String?
+
   /// The version of the collector used.
   var version: String?
 
@@ -47,6 +53,8 @@ extension RunEnvironment: Encodable {
     case jobId = "job_id"
     case message
     case debug
+    case executionNamePrefix = "execution_name_prefix"
+    case executionNameSuffix = "execution_name_suffix"
     case version
     case collector
   }
