@@ -22,7 +22,7 @@ public struct TestCollector {
     let tracer = Tracer.live()
 
     let uploader: UploadClient?
-    if let apiToken = environment.analyticsToken, apiToken != "" {
+    if let apiToken = environment.analyticsToken {
       let baseUrl = environment.analyticsBaseUrl ?? URL(string: Self.baseURL)!
       let api = ApiClient.live(apiToken: apiToken, baseUrl: baseUrl)
       let runEnvironment = environment.runEnvironment()
