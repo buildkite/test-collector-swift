@@ -30,7 +30,7 @@ final class ApiClientTests: XCTestCase {
     XCTAssertEqual(request.httpMethod, "POST")
     XCTAssertEqual(
       request.httpBodyDictionary,
-      ["format": "json", "run_env": ["key": "key"], "data": []]
+      ["format": "json", "run_env": ["key": "key"], "data": NSArray()]
     )
   }
 }
