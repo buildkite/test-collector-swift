@@ -8,38 +8,60 @@ extension UploadClient {
   ///   - api: An API client.
   ///   - logger: A logger.
   ///   - runEnvironment: The run environment to accompany uploaded traces.
+  ///   - batchSize: The maximum number of traces per upload.
+  ///   - group: A dispatch group to associate with upload tasks.
   /// - Returns: A upload client that uses an api client.
   static func live(
     api: ApiClient,
     runEnvironment: RunEnvironment,
-    logger: Logger? = nil
+    logger: Logger? = nil,
+    batchSize: Int = maximumBatchSize,
+    group: DispatchGroup = DispatchGroup()
   ) -> UploadClient {
-    let client = LiveClient(api: api, logger: logger, runEnvironment: runEnvironment)
+    let client = LiveClient(
+      api: api,
+      batchSize: batchSize,
+      logger: logger,
+      runEnvironment: runEnvironment,
+      taskGroup: group
+    )
 
     return UploadClient(
-      upload: { client.upload(trace: $0) },
+      record: { client.record(trace: $0) },
       waitForUploads: { client.waitForUploads(timeout: $0) }
     )
   }
 
   private struct LiveClient {
     let api: ApiClient
+    let batchSize: Int
     let logger: Logger?
     let runEnvironment: RunEnvironment
-    let taskGroup = DispatchGroup()
+    let taskGroup: DispatchGroup
 
-    func upload(trace: Trace) -> Task<Void, Error> {
+    private let traces = LockIsolated([Trace]())
+
+    func record(trace: Trace) {
+      self.traces.withValue { traces in
+        traces.append(trace)
+        guard traces.count >= self.batchSize else { return }
+        self.upload(traces: traces)
+        traces = []
+      }
+    }
+
+    private func upload(traces: [Trace]) {
       // NB: Uploads must enter the task group synchronously to ensure they are waited for
       self.taskGroup.enter()
-      return Task {
+      Task {
         defer { self.taskGroup.leave() }
-        let testData = TestResults.json(runEnv: runEnvironment, data: [trace])
+        let testData = TestResults.json(runEnv: runEnvironment, data: traces)
         try await self.upload(testData: testData)
       }
     }
 
     private func upload(testData: TestResults) async throws {
-      self.logger?.debug("uploading \(testData)")
+      self.logger?.debug("Uploading \(testData)")
 
       do {
         let (data, _) = try await self.api.data(for: .upload(testData))
@@ -50,14 +72,19 @@ extension UploadClient {
             throw UploadError.unknown
           }
         }
-        self.logger?.debug("Finished Upload, got response: \(result)")
+        self.logger?.debug("Upload finished - \(result)")
       } catch {
-        self.logger?.error("Failed to upload result, got error: \(error.localizedDescription)")
+        self.logger?.error("Upload failed - \(error.localizedDescription)")
         throw error
       }
     }
 
     func waitForUploads(timeout: TimeInterval) {
+      self.traces.withValue { traces in
+        guard !traces.isEmpty else { return }
+        self.upload(traces: traces)
+        traces = []
+      }
       let result = self.taskGroup.wait(timeout: timeout)
       if result == .timedOut {
         self.logger?.error("Upload client timed out before completing all uploads")
@@ -65,3 +92,6 @@ extension UploadClient {
     }
   }
 }
+
+// The maximum number of traces that can be sent per upload
+private let maximumBatchSize = 5000
