@@ -92,14 +92,15 @@ class TestObserver: NSObject, XCTestObservation {
 
     let trace = Trace(test: test, span: span)
 
-    self.uploader?.upload(trace: trace)
+    self.uploader?.record(trace: trace)
   }
 
   /// Notifies the observer immediately after all tests in a test bundle finish executing.
   ///
   /// Called exactly once per test bundle.
   ///
-  /// - Note: The test process will generally exit after this method returns, so it must block until all asynchronous work is complete.
+  /// - Note: The test process will generally exit after this method returns, so it must block until all asynchronous
+  /// work is complete.
   func testBundleDidFinish(_ testBundle: Bundle) {
     self.uploader?.waitForUploads()
     self.logger?.waitForLogs()

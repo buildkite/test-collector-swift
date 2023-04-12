@@ -52,7 +52,12 @@ extension Trace {
     self.scope = test.className
     self.name = test.testName
     self.result = test.result.map(Trace.Result.init) ?? .failed
-    self.failureReason = test.issues.first?.compactDescription
+    if test.issues.count > 1 {
+      let failureReasons = test.issues.map(\.compactDescription).joined(separator: ", ")
+      self.failureReason = "\(test.issues.count) failures: \(failureReasons)"
+    } else {
+      self.failureReason = test.issues.first?.compactDescription
+    }
     self.failureExpanded = test.issues.map(Trace.FailureExpanded.init(issue:))
     self.history = span
   }

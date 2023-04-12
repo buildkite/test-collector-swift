@@ -17,7 +17,7 @@ struct Logger {
   /// - Parameters:
   ///   - logLevel: The log level for this logger
   ///   - log: A closure that is called when this logger logs a message
-  ///   - queue: A closure that is called when this logger logs a message
+  ///   - queue: A dispatch queue for scheduling  asynchronous logging
   init(
     logLevel: Logger.Level = .info,
     printer: @escaping (String) -> Void = loggerPrint,

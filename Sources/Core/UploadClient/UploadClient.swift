@@ -8,33 +8,31 @@ struct UploadClient {
 
     var errorDescription: String? {
       switch self {
-      case .error(let message): return message
+      case let .error(message): return message
       case .unknown: return "Unknown Error"
       }
     }
   }
 
-  private var upload: (Trace) -> Task<Void, Error>
+  private var record: (Trace) -> Void
   private var waitForUploads: (TimeInterval) -> Void
 
   init(
-    upload: @escaping (Trace) -> Task<Void, Error>,
+    record: @escaping (Trace) -> Void,
     waitForUploads: @escaping (TimeInterval) -> Void
   ) {
-    self.upload = upload
+    self.record = record
     self.waitForUploads = waitForUploads
   }
 
-  /// Uploads a trace.
+  /// Records a trace to be included in the next upload.
   ///
-  /// - Parameter trace: The trace to upload
-  /// - Returns: A `Task` responsible for performing the upload.
-  @discardableResult
-  func upload(trace: Trace) -> Task<Void, Error> {
-    self.upload(trace)
+  /// - Parameter trace: The trace to record
+  func record(trace: Trace) {
+    self.record(trace)
   }
 
-  /// Waits synchronously for the previously submitted uploads to complete.
+  /// Waits synchronously for the previously submitted traces to be uploaded.
   ///
   /// - Parameter timeout: The maximum duration in seconds to wait for uploads to complete.
   func waitForUploads(timeout: TimeInterval = twoMinutes) {
