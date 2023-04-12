@@ -84,9 +84,13 @@ final class TestResultsTests: XCTestCase {
             "scope": "TestResultsTests",
             "name": "testSuccess",
             "result": "passed",
-            "failure_expanded": [],
-            "history": ["section": "span0", "detail": [:], "children": []],
-          ],
+            "failure_expanded": NSArray(),
+            "history": [
+              "section": "span0",
+              "detail": NSDictionary(),
+              "children": NSArray(),
+            ] as NSDictionary,
+          ] as NSDictionary,
           [
             "id": "00000000-0000-0000-0000-000000000001",
             "scope": "TestResultsTests",
@@ -105,7 +109,11 @@ final class TestResultsTests: XCTestCase {
                 ],
               ],
             ],
-            "history": ["section": "span1", "detail": [:], "children": []],
+            "history": [
+              "section": "span1",
+              "detail": NSDictionary(),
+              "children": NSArray(),
+            ] as NSDictionary,
           ],
           [
             "id": "00000000-0000-0000-0000-000000000002",
@@ -114,11 +122,15 @@ final class TestResultsTests: XCTestCase {
             "result": "failed",
             "failure_reason": "3 failures: First failure, Second failure, Third failure",
             "failure_expanded": [
-              ["backtrace": [], "expanded": ["Failure 1"]],
-              ["backtrace": [], "expanded": ["Failure 2"]],
-              ["backtrace": [], "expanded": ["Failure 3"]],
+              ["backtrace": NSArray(), "expanded": ["Failure 1"]],
+              ["backtrace": NSArray(), "expanded": ["Failure 2"]],
+              ["backtrace": NSArray(), "expanded": ["Failure 3"]],
             ],
-            "history": ["section": "span2", "detail": [:], "children": []],
+            "history": [
+              "section": "span2",
+              "detail": NSDictionary(),
+              "children": NSArray(),
+            ] as NSDictionary,
           ],
         ],
       ]
