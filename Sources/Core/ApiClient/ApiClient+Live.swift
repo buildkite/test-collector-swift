@@ -7,13 +7,13 @@ import FoundationNetworking
 extension ApiClient {
   static func live(
     apiToken: String,
-    baseUrl: URL = URL(string: "https://analytics-api.buildkite.com/v1/")!,
+    baseURL: URL,
     encoder: JSONEncoder = .init(),
     decoder: JSONDecoder = .init(),
     session: ApiSession = .urlSession(.shared)
   ) -> ApiClient {
     func makeRequest(from route: ApiRoute) throws -> URLRequest {
-      var request = URLRequest(url: baseUrl)
+      var request = URLRequest(url: baseURL)
       request.setValue("Token token=\"\(apiToken)\"", forHTTPHeaderField: "Authorization")
 
       switch route {
