@@ -1,5 +1,8 @@
 import Core
 
 public enum TestCollector {
-  // TODO: Add public api
+  /// The base URL for the Test Analytics API.
+  public static var baseURL: String {
+    Core.TestCollector.baseURL
+  }
 }

@@ -22,8 +22,9 @@ public struct TestCollector {
     let tracer = Tracer.live()
 
     let uploader: UploadClient?
-    if let apiToken = environment.analyticsToken, apiToken != "" {
-      let api = ApiClient.live(apiToken: apiToken)
+    if let apiToken = environment.analyticsToken {
+      let baseURL = environment.analyticsBaseURL ?? URL(string: Self.baseURL)!
+      let api = ApiClient.live(apiToken: apiToken, baseURL: baseURL)
       let runEnvironment = environment.runEnvironment()
       uploader = .live(api: api, runEnvironment: runEnvironment, logger: logger)
     } else {
@@ -63,6 +64,7 @@ public struct TestCollector {
 
   public private(set) static var shared: TestCollector?
 
+  public static let baseURL = "https://analytics-api.buildkite.com/v1/"
   static let name = "test-collector-swift"
   static let version = "0.3.0"
 }

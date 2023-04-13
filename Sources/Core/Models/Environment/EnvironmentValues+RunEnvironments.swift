@@ -8,7 +8,7 @@ extension EnvironmentValues {
       ?? self.xcodeCloud
       ?? self.generic(key: defaultKey)
 
-    return RunEnvironment(
+    let runEnvironment = RunEnvironment(
       ci: ciEnv?.ci,
       key: self.analyticsKey ?? ciEnv?.key ?? defaultKey,
       url: self.analyticsUrl ?? ciEnv?.url,
@@ -21,16 +21,19 @@ extension EnvironmentValues {
       executionNamePrefix: self.executionNamePrefix,
       executionNameSuffix: self.executionNameSuffix,
       version: TestCollector.version,
-      collector: TestCollector.name
+      collector: TestCollector.name,
+      customEnvironment: self.customEnvironment
     )
+
+    logger?.debug("\(runEnvironment)")
+
+    return runEnvironment
   }
 
   private var buildkite: RunEnvironment? {
     guard let buildId = self.buildkiteBuildId else { return nil }
 
-    logger?.debug("Successfully found Buildkite RunEnvironment")
-
-    return RunEnvironment(
+    let runEnvironment = RunEnvironment(
       ci: "buildkite",
       key: buildId,
       url: self.buildkiteBuildUrl,
@@ -40,6 +43,10 @@ extension EnvironmentValues {
       jobId: self.buildkiteJobId,
       message: self.buildkiteMessage
     )
+
+    logger?.debug("Successfully found Buildkite RunEnvironment")
+
+    return runEnvironment
   }
 
   private var circleCi: RunEnvironment? {
@@ -48,9 +55,7 @@ extension EnvironmentValues {
       let workFlowId = self.circleWorkflowId
     else { return nil }
 
-    logger?.debug("Successfully found Circle CI RunEnvironment")
-
-    return RunEnvironment(
+    let runEnvironment = RunEnvironment(
       ci: "circleci",
       key: "\(workFlowId)-\(buildNumber)",
       url: self.circleBuildUrl,
@@ -59,6 +64,10 @@ extension EnvironmentValues {
       number: buildNumber,
       message: "Build #\(buildNumber) on branch \(self.circleBranch ?? "[Unknown branch]")"
     )
+
+    logger?.debug("Successfully found Circle CI RunEnvironment")
+
+    return runEnvironment
   }
 
   private func generic(key: String) -> RunEnvironment? {
@@ -81,15 +90,13 @@ extension EnvironmentValues {
       let startedBy = self.githubWorkflowStartedBy
     else { return nil }
 
-    logger?.debug("Successfully found Github RunEnvironment")
-
     var url: String?
     if let repository = self.gitHubRepository, let runId = self.gitHubRunId {
       url = "https://github.com/\(repository)/actions/runs/\(runId)"
     }
     let message = "Run #\(runNumber) attempt #\(runAttempt) of \(workflowName), started by \(startedBy)"
 
-    return RunEnvironment(
+    let runEnvironment = RunEnvironment(
       ci: "github_actions",
       key: "\(action)-\(runNumber)-\(runAttempt)",
       url: url,
@@ -98,6 +105,10 @@ extension EnvironmentValues {
       number: runNumber,
       message: message
     )
+
+    logger?.debug("Successfully found Github RunEnvironment")
+
+    return runEnvironment
   }
 
   private var xcodeCloud: RunEnvironment? {
@@ -108,11 +119,9 @@ extension EnvironmentValues {
       let workflowName = self.xcodeWorkflowName
     else { return nil }
 
-    logger?.debug("Successfully found Xcode Cloud RunEnvironment")
-
     let message = "Build #\(buildNumber) of workflow: \(workflowName)"
 
-    return RunEnvironment(
+    let runEnvironment = RunEnvironment(
       ci: "xcodeCloud",
       key: buildID,
       url: self.xcodePullRequestURL,
@@ -121,5 +130,9 @@ extension EnvironmentValues {
       number: buildNumber,
       message: message
     )
+
+    logger?.debug("Successfully found Xcode Cloud RunEnvironment")
+
+    return runEnvironment
   }
 }
