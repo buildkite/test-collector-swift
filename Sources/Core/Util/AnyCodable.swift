@@ -73,7 +73,7 @@ extension AnyCodable: Encodable {
 
 extension AnyCodable: CustomStringConvertible {
   var description: String {
-    if self.base is Void { return "nil" }
+    if self.base is NSNull { return "nil" }
     return String(describing: self.base)
   }
 }

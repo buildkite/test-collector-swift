@@ -15,7 +15,7 @@ final class ApiClientTests: XCTestCase {
     }
     let api = ApiClient.live(
       apiToken: "token",
-      baseUrl: URL(string: "http://api.test.com/")!,
+      baseURL: URL(string: "http://api.test.com/")!,
       session: session
     )
     let results = TestResults.json(runEnv: .init(key: "key"), data: [])

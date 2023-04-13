@@ -79,18 +79,22 @@ final class TestResultsTests: XCTestCase {
         "format": "json",
         "run_env": ["key": "test"],
         "data": [
-          [
-            "id": "00000000-0000-0000-0000-000000000000",
-            "scope": "TestResultsTests",
-            "name": "testSuccess",
-            "result": "passed",
-            "failure_expanded": NSArray(),
-            "history": [
-              "section": "span0",
-              "detail": NSDictionary(),
-              "children": NSArray(),
-            ] as NSDictionary,
-          ] as NSDictionary,
+          NSDictionary(
+            dictionary: [
+              "id": "00000000-0000-0000-0000-000000000000",
+              "scope": "TestResultsTests",
+              "name": "testSuccess",
+              "result": "passed",
+              "failure_expanded": NSArray(),
+              "history": NSDictionary(
+                dictionary: [
+                  "section": "span0",
+                  "detail": NSDictionary(),
+                  "children": NSArray(),
+                ]
+              ),
+            ]
+          ),
           [
             "id": "00000000-0000-0000-0000-000000000001",
             "scope": "TestResultsTests",
@@ -109,11 +113,13 @@ final class TestResultsTests: XCTestCase {
                 ],
               ],
             ],
-            "history": [
-              "section": "span1",
-              "detail": NSDictionary(),
-              "children": NSArray(),
-            ] as NSDictionary,
+            "history": NSDictionary(
+              dictionary: [
+                "section": "span1",
+                "detail": NSDictionary(),
+                "children": NSArray(),
+              ]
+            ),
           ],
           [
             "id": "00000000-0000-0000-0000-000000000002",
@@ -126,11 +132,13 @@ final class TestResultsTests: XCTestCase {
               ["backtrace": NSArray(), "expanded": ["Failure 2"]],
               ["backtrace": NSArray(), "expanded": ["Failure 3"]],
             ],
-            "history": [
-              "section": "span2",
-              "detail": NSDictionary(),
-              "children": NSArray(),
-            ] as NSDictionary,
+            "history": NSDictionary(
+              dictionary: [
+                "section": "span2",
+                "detail": NSDictionary(),
+                "children": NSArray(),
+              ]
+            ),
           ],
         ],
       ]
