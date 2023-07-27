@@ -1,5 +1,5 @@
 # Buildkite Test Collector for Swift (Beta)
-
+test
 Official [Buildkite Test Analytics](https://buildkite.com/test-analytics) collector for Swift test frameworks ✨
 
 ⚒ **Supported test frameworks:** XCTest, and [more coming soon](https://github.com/buildkite/test-collector-swift/labels/test%20framework).
