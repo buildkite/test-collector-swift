@@ -24,11 +24,11 @@ struct EnvironmentValues {
     self.string(for: key).map { NSString(string: $0).boolValue }
   }
 
-  func dictionary(for key: String) -> [String: AnyCodable]? {
+  func dictionary(for key: String) -> String? {
     guard let string = self.string(for: key) else { return nil }
     guard
       let data = string.data(using: .utf8),
-      let dictionary = try? JSONDecoder().decode([String: AnyCodable].self, from: data)
+      let dictionary = try? JSONDecoder().decode(String.self, from: data)
     else {
       self.logger?.error("\(key) is not a valid json object")
       return nil
