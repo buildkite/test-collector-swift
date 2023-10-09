@@ -21,8 +21,7 @@ extension EnvironmentValues {
       executionNamePrefix: self.executionNamePrefix,
       executionNameSuffix: self.executionNameSuffix,
       version: TestCollector.version,
-      collector: TestCollector.name,
-      customEnvironment: self.customEnvironment
+      collector: TestCollector.name
     )
 
     logger?.debug("\(runEnvironment)")

@@ -97,10 +97,6 @@ extension EnvironmentValues {
   var circleBranch: String? { self.string(for: "CIRCLE_BRANCH") }
   var circleSha: String? { self.string(for: "CIRCLE_SHA1") }
 
-  var customEnvironment: [String: AnyCodable]? {
-    self.dictionary(for: "BUILDKITE_ANALYTICS_ENVIRONMENT")
-  }
-
   var executionNamePrefix: String? { self.string(for: "BUILDKITE_ANALYTICS_EXECUTION_NAME_PREFIX") }
   var executionNameSuffix: String? { self.string(for: "BUILDKITE_ANALYTICS_EXECUTION_NAME_SUFFIX") }
 

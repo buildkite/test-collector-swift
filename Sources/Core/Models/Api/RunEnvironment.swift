@@ -40,12 +40,6 @@ struct RunEnvironment: Equatable {
 
   /// The name of the collector used.
   var collector: String?
-
-  /// A dictionary that contains custom values associated with the test run.
-  ///
-  /// - Note: Used internally for testing experimental features. If an existing key
-  /// is used, the custom environment value will take precedence.
-  var customEnvironment: [String: AnyCodable]?
 }
 
 extension RunEnvironment: Encodable {
@@ -95,8 +89,5 @@ extension RunEnvironment: Encodable {
     try container.encodeIfPresent(self.executionNameSuffix, forKey: .executionNameSuffix)
     try container.encodeIfPresent(self.version, forKey: .version)
     try container.encodeIfPresent(self.collector, forKey: .collector)
-    for (key, value) in self.customEnvironment ?? [:] {
-      try container.encode(value, forKey: CodingKey(key))
-    }
   }
 }

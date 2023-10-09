@@ -135,11 +135,7 @@ final class RunEnvironmentTests: XCTestCase {
       executionNamePrefix: "executionNamePrefix",
       executionNameSuffix: "executionNameSuffix",
       version: "version",
-      collector: "collector",
-      customEnvironment: [
-        "custom_key": "customKey",
-        "tags": ["A", "B", "C"],
-      ]
+      collector: "collector"
     )
 
     let data = try JSONEncoder().encode(runEnvironment)
@@ -161,25 +157,8 @@ final class RunEnvironmentTests: XCTestCase {
         "execution_name_prefix": "executionNamePrefix",
         "execution_name_suffix": "executionNameSuffix",
         "version": "version",
-        "collector": "collector",
-        "custom_key": "customKey",
-        "tags": ["A", "B", "C"],
+        "collector": "collector"
       ]
     )
-  }
-
-  func testCustomEnvironmentTakesPrecedence() throws {
-    let runEnvironment = RunEnvironment(
-      key: "key",
-      customEnvironment: [
-        "key": "customKey",
-      ]
-    )
-
-    let data = try JSONEncoder().encode(runEnvironment)
-
-    let json = try JSONSerialization.jsonObject(with: data)
-
-    XCTAssertEqual(json as? NSDictionary, ["key": "customKey"])
   }
 }
