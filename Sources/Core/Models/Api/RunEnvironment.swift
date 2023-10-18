@@ -40,6 +40,9 @@ struct RunEnvironment: Equatable {
 
   /// The name of the collector used.
   var collector: String?
+
+  /// Array of tags for the test run.
+  var tags: Array?
 }
 
 extension RunEnvironment: Encodable {
@@ -57,5 +60,6 @@ extension RunEnvironment: Encodable {
     case executionNameSuffix = "execution_name_suffix"
     case version
     case collector
+    case tags
   }
 }

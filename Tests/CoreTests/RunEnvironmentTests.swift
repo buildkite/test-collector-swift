@@ -135,7 +135,8 @@ final class RunEnvironmentTests: XCTestCase {
       executionNamePrefix: "executionNamePrefix",
       executionNameSuffix: "executionNameSuffix",
       version: "version",
-      collector: "collector"
+      collector: "collector",
+      tags: ["cat", "meow"]
     )
 
     let data = try JSONEncoder().encode(runEnvironment)
@@ -157,7 +158,8 @@ final class RunEnvironmentTests: XCTestCase {
         "execution_name_prefix": "executionNamePrefix",
         "execution_name_suffix": "executionNameSuffix",
         "version": "version",
-        "collector": "collector"
+        "collector": "collector",
+        "tags": ["cat", "meow"]
       ]
     )
   }
