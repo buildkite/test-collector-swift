@@ -1,0 +1,19 @@
+steps:
+  - label: "Swift Build and Tests"
+    command:
+      - "swift test --parallel"
+      - "swift build --configuration release"
+    branches:
+      - "main"
+    agents:
+      os: "{{matrix.os}}"
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_{{matrix.xcode_version}}.app/Contents/Developer"
+    matrix:
+      setup:
+        xcode_version:
+          - "13.2.1"
+          - "13.3.1"
+        os:
+          - "macos"
+          - "linux"
