@@ -1,5 +1,5 @@
 struct SourceCodeLocation {
-  var filePath: String
+  var fileURL: URL
   var line: UInt
 }
 
@@ -8,7 +8,7 @@ import XCTest
 
 extension SourceCodeLocation {
   init(_ location: XCTSourceCodeLocation) {
-    self.filePath = location.fileURL.path
+    self.fileURL = location.fileURL
     self.line = UInt(location.lineNumber)
   }
 }
