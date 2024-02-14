@@ -1,7 +1,7 @@
 @testable import Core
 import XCTest
 
-class AnyCodableTests: XCTestCase {
+final class AnyCodableTests: XCTestCase {
   func testDecoding() throws {
     let decoder = JSONDecoder()
 
