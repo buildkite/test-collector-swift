@@ -1,7 +1,7 @@
 import XCTest
 
 /// An object that captures test data and uploads it in real time.
-class TestObserver: NSObject, XCTestObservation {
+final class TestObserver: NSObject, XCTestObservation {
   let logger: Logger?
   let tracer: Tracer
   let uploader: UploadClient?
