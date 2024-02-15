@@ -42,7 +42,8 @@ final class TestResultsTests: XCTestCase {
               ),
             ],
             location: .init(
-              filePath: "/foo/bar",
+              filePath: "/foo/bar", 
+              fileName: "bar.swift",
               line: 10
             )
           )
@@ -60,18 +61,21 @@ final class TestResultsTests: XCTestCase {
         .init(compactDescription: "First failure", description: "Failure 1", sourceCodeContext: .init(
           location: .init(
             filePath: "/foo/first",
+            fileName: "first.swift",
             line: 50
           )
         )),
         .init(compactDescription: "Second failure", description: "Failure 2", sourceCodeContext: .init(
           location: .init(
             filePath: "/foo/second",
+            fileName: "second.swift",
             line: 60
           )
         )),
         .init(compactDescription: "Third failure", description: "Failure 3", sourceCodeContext: .init(
           location: .init(
             filePath: "/foo/third",
+            fileName: "third.swift",
             line: 70
           )
         )),
@@ -117,8 +121,8 @@ final class TestResultsTests: XCTestCase {
           [
             "id": "00000000-0000-0000-0000-000000000001",
             "scope": "TestResultsTests",
-            "location": "/foo/bar:10",
-            "file_name": "/foo/bar",
+            "location": "bar.swift:10",
+            "file_name": "bar.swift",
             "name": "testFailure",
             "result": "failed",
             "failure_reason": "The test failed",
@@ -145,8 +149,8 @@ final class TestResultsTests: XCTestCase {
           [
             "id": "00000000-0000-0000-0000-000000000002",
             "scope": "TestResultsTests",
-            "location": "/foo/first:50",
-            "file_name": "/foo/first",
+            "location": "first.swift:50",
+            "file_name": "first.swift",
             "name": "testMultipleFailures",
             "result": "failed",
             "failure_reason": "3 failures: First failure, Second failure, Third failure",

@@ -59,8 +59,8 @@ extension Trace {
       self.failureReason = test.issues.first?.compactDescription
     }
     if let issueLocation = test.issues.first?.sourceCodeContext.location {
-      self.fileName = issueLocation.filePath
-      self.location = "\(issueLocation.filePath):\(issueLocation.line)"
+      self.fileName = issueLocation.fileName
+      self.location = "\(issueLocation.fileName):\(issueLocation.line)"
     }
     self.failureExpanded = test.issues.map(Trace.FailureExpanded.init(issue:))
     self.history = span
