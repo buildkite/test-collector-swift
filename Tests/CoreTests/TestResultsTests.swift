@@ -40,7 +40,11 @@ final class TestResultsTests: XCTestCase {
                   symbolName: "TestResultsTests.testJSONEncoding()"
                 )
               ),
-            ]
+            ],
+            location: .init(
+              filePath: "/foo/bar",
+              line: 10
+            )
           )
         ),
       ],
@@ -53,9 +57,24 @@ final class TestResultsTests: XCTestCase {
       testName: "testMultipleFailures",
       result: .failed,
       issues: [
-        .init(compactDescription: "First failure", description: "Failure 1", sourceCodeContext: .init()),
-        .init(compactDescription: "Second failure", description: "Failure 2", sourceCodeContext: .init()),
-        .init(compactDescription: "Third failure", description: "Failure 3", sourceCodeContext: .init()),
+        .init(compactDescription: "First failure", description: "Failure 1", sourceCodeContext: .init(
+          location: .init(
+            filePath: "/foo/first",
+            line: 50
+          )
+        )),
+        .init(compactDescription: "Second failure", description: "Failure 2", sourceCodeContext: .init(
+          location: .init(
+            filePath: "/foo/second",
+            line: 60
+          )
+        )),
+        .init(compactDescription: "Third failure", description: "Failure 3", sourceCodeContext: .init(
+          location: .init(
+            filePath: "/foo/third",
+            line: 70
+          )
+        )),
       ],
       expectedFailures: []
     )
@@ -98,6 +117,8 @@ final class TestResultsTests: XCTestCase {
           [
             "id": "00000000-0000-0000-0000-000000000001",
             "scope": "TestResultsTests",
+            "location": "/foo/bar:10",
+            "file_name": "/foo/bar",
             "name": "testFailure",
             "result": "failed",
             "failure_reason": "The test failed",
@@ -124,6 +145,8 @@ final class TestResultsTests: XCTestCase {
           [
             "id": "00000000-0000-0000-0000-000000000002",
             "scope": "TestResultsTests",
+            "location": "/foo/first:50",
+            "file_name": "/foo/first",
             "name": "testMultipleFailures",
             "result": "failed",
             "failure_reason": "3 failures: First failure, Second failure, Third failure",
