@@ -61,7 +61,10 @@ final class TestObserver: NSObject, XCTestObservation {
     inFile filePath: String?,
     atLine lineNumber: Int
   ) {
-    let context = SourceCodeContext(filePath: filePath ?? "<unknown>", line: lineNumber)
+    let context = SourceCodeContext(
+      filePath: filePath ?? "<unknown>",
+      fileName: String(filePath?.split(separator: "/").last ?? "<unknown>"),
+      line: lineNumber)
     self.test?.issues.append(TestIssue(description, context: context))
   }
   #endif

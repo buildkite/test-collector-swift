@@ -4,9 +4,13 @@ struct SourceCodeContext {
 }
 
 extension SourceCodeContext {
-  init(filePath: String, line: Int, callStack: [SourceCodeFrame] = []) {
+  init(filePath: String, fileName: String, line: Int, callStack: [SourceCodeFrame] = []) {
     self.callStack = callStack
-    self.location = .init(filePath: filePath, line: UInt(line))
+    self.location = .init(
+      filePath: filePath,
+      fileName: fileName,
+      line: UInt(line)
+    )
   }
 }
 
