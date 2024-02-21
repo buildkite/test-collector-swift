@@ -1,15 +1,16 @@
 steps:
-   - label: "Swift Build and Tests"
-     command:
-       - "swift test --parallel"
-       - "swift build --configuration release"
-     branches:
-       - "main"
-     agents:
-       os: "macos"
-     env:
-       DEVELOPER_DIR: "/Applications/Xcode_{{matrix.xcode_version}}.app/Contents/Developer"
-     matrix:
-       setup:
-         xcode_version:
-           - "14.3.1"
+  - label: "Swift Build and Tests"
+    command:
+      - "swift test --parallel"
+      - "swift build --configuration release"
+    branches:
+      - "main"
+      - "buildkite-runner-migration"
+    agents:
+      os: "macos"
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_{{matrix.xcode_version}}.app/Contents/Developer"
+    matrix:
+      setup: 
+        xcode_version:
+          - "15.2"
