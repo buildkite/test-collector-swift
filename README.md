@@ -2,7 +2,7 @@
 
 Official [Buildkite Test Analytics](https://buildkite.com/test-analytics) collector for Swift test frameworks ✨
 
-⚒ **Supported test frameworks:** XCTest, and [more coming soon](https://github.com/buildkite/test-collector-swift/labels/test%20framework).
+⚒ **Supported test frameworks:** XCTest, Quick, and Nimble.
 
 📦 **Supported CI systems:** Buildkite, GitHub Actions, CircleCI, Xcode Cloud, and others via the `BUILDKITE_ANALYTICS_*` environment variables.
 
@@ -21,7 +21,7 @@ To use the Buildkite Test Collector with a SwiftPM project, add this repository 
 let package = Package(
   name: "MyProject",
   dependencies: [
-    .package(url: "https://github.com/buildkite/test-collector-swift", from: "0.4.0")
+    .package(url: "https://github.com/buildkite/test-collector-swift", from: "0.4.1")
   ],
   targets: [
     .target(name: "MyProject"),

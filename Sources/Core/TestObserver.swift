@@ -1,7 +1,7 @@
 import XCTest
 
 /// An object that captures test data and uploads it in real time.
-class TestObserver: NSObject, XCTestObservation {
+final class TestObserver: NSObject, XCTestObservation {
   let logger: Logger?
   let tracer: Tracer
   let uploader: UploadClient?
@@ -61,7 +61,11 @@ class TestObserver: NSObject, XCTestObservation {
     inFile filePath: String?,
     atLine lineNumber: Int
   ) {
-    let context = SourceCodeContext(filePath: filePath ?? "<unknown>", line: lineNumber)
+    let context = SourceCodeContext(
+      filePath: filePath ?? "<unknown>",
+      fileName: String(filePath?.split(separator: "/").last ?? "<unknown>"),
+      line: lineNumber
+    )
     self.test?.issues.append(TestIssue(description, context: context))
   }
   #endif
