@@ -17,7 +17,7 @@ jobs:
       matrix:
         swift-version:
           - '5.7.1'
-          - '5.8.1'
+          - '5.9.2'
     container:
       image: swift:${{ matrix.swift-version }}
     steps:
