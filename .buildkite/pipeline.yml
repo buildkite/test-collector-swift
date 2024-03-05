@@ -1,5 +1,5 @@
 steps:
-  - label: "Swift Build and Tests"
+  - label: ":swift: Build & Test (Xcode {{matrix.xcode_version}})"
     command:
       - "swift test --parallel"
       - "swift build --configuration release"
@@ -11,7 +11,7 @@ steps:
     env:
       DEVELOPER_DIR: "/Applications/Xcode_{{matrix.xcode_version}}.app/Contents/Developer"
     matrix:
-      setup: 
+      setup:
         xcode_version:
           - "15.2"
           - "14.3.1"
