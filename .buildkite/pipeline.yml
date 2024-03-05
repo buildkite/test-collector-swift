@@ -5,7 +5,6 @@ steps:
       - "swift build --configuration release"
     branches:
       - "main"
-      - "buildkite-runner-migration"
     agents:
       os: "macos"
     env:
