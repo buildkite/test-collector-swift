@@ -5,7 +5,6 @@ steps:
     command: "swift test --parallel"
     branches:
       - "main"
-      - "buildkite-runner-migration"
     agents:
       os: "macos"
     env:
