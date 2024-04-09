@@ -1,7 +1,7 @@
 @testable import Core
 import XCTest
 
-class XCTestHelpersTests: XCTestCase {
+final class XCTestHelpersTests: XCTestCase {
   func testTestName() {
     XCTAssertEqual("testTestName", XCTestCase.testName(of: self))
   }

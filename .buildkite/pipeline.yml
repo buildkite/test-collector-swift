@@ -4,8 +4,7 @@ steps:
     key: swift-test
     command: "swift test --parallel"
     branches:
-      - "main"
-      - "buildkite-runner-migration"
+      - "*"
     agents:
       os: "macos"
     env:
@@ -21,8 +20,7 @@ steps:
     depends_on: swift-test
     command: "swift build --configuration release"
     branches:
-      - "main"
-      - "buildkite-runner-migration"
+      - "*"
     agents:
       os: "macos"
     env:
