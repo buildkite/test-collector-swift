@@ -127,7 +127,7 @@ See the [GitHub 'enhancement' issues](https://github.com/buildkite/test-collecto
 
 ## 👩‍💻 Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/buildkite/test-collector-swift
+Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTING.md).
 
 ## 📜 License
 
