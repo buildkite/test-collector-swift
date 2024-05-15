@@ -50,3 +50,5 @@ Package.resolved
 # .swiftpm
 
 .build/
+
+bazel-*
