@@ -18,7 +18,7 @@ final class ApiClientTests: XCTestCase {
       baseURL: URL(string: "http://api.test.com/")!,
       session: session
     )
-    let results = TestResults.json(runEnv: .init(key: "key"), data: [])
+    let results = TestResults.json(runEnv: .init(key: "key", isCacheEnabled: true), data: [])
 
     let (value, _) = try await api.data(for: .upload(results), as: Response.self)
 
@@ -30,7 +30,7 @@ final class ApiClientTests: XCTestCase {
     XCTAssertEqual(request.httpMethod, "POST")
     XCTAssertEqual(
       request.httpBodyDictionary,
-      ["format": "json", "run_env": ["key": "key"], "data": NSArray()]
+      ["format": "json", "run_env": ["key": "key", "isCacheEnabled": "true"], "data": NSArray()]
     )
   }
 }

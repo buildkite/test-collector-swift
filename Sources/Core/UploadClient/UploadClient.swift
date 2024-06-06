@@ -16,13 +16,16 @@ struct UploadClient {
 
   private var record: (Trace) -> Void
   private var waitForUploads: (TimeInterval) -> Void
+  private var storeData: () -> Void
 
   init(
     record: @escaping (Trace) -> Void,
-    waitForUploads: @escaping (TimeInterval) -> Void
+    waitForUploads: @escaping (TimeInterval) -> Void,
+    storeData: @escaping () -> Void
   ) {
     self.record = record
     self.waitForUploads = waitForUploads
+    self.storeData = storeData
   }
 
   /// Records a trace to be included in the next upload.
@@ -37,6 +40,11 @@ struct UploadClient {
   /// - Parameter timeout: The maximum duration in seconds to wait for uploads to complete.
   func waitForUploads(timeout: TimeInterval = twoMinutes) {
     self.waitForUploads(timeout)
+  }
+
+  /// Saves data in local storage for the previously submitted Traces.
+  func saveData() {
+    self.storeData()
   }
 }
 

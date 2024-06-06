@@ -84,7 +84,7 @@ final class TestResultsTests: XCTestCase {
     )
 
     let testResults = TestResults.json(
-      runEnv: RunEnvironment(key: "test"),
+      runEnv: RunEnvironment(key: "test", isCacheEnabled: true),
       data: [
         .init(test: testSuccess, span: .init(section: "span0")),
         .init(test: testFailure, span: .init(section: "span1")),
@@ -100,7 +100,12 @@ final class TestResultsTests: XCTestCase {
       json as? NSDictionary,
       [
         "format": "json",
-        "run_env": ["key": "test"],
+        "run_env": NSDictionary(
+          dictionary: [
+            "key": "test",
+            "isCacheEnabled": "true",
+          ]
+        ),
         "data": [
           NSDictionary(
             dictionary: [
