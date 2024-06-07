@@ -22,6 +22,7 @@ extension EnvironmentValues {
       executionNameSuffix: self.executionNameSuffix,
       version: TestCollector.version,
       collector: TestCollector.name,
+      isCacheEnabled: self.isAnalyticsCachingEnabled,
       customEnvironment: self.customEnvironment
     )
 
@@ -41,7 +42,8 @@ extension EnvironmentValues {
       commitSha: self.buildkiteCommit,
       number: self.buildkiteBuildNumber,
       jobId: self.buildkiteJobId,
-      message: self.buildkiteMessage
+      message: self.buildkiteMessage,
+      isCacheEnabled: self.isAnalyticsCachingEnabled
     )
 
     logger?.debug("Successfully found Buildkite RunEnvironment")
@@ -62,7 +64,8 @@ extension EnvironmentValues {
       branch: self.circleBranch,
       commitSha: self.circleSha,
       number: buildNumber,
-      message: "Build #\(buildNumber) on branch \(self.circleBranch ?? "[Unknown branch]")"
+      message: "Build #\(buildNumber) on branch \(self.circleBranch ?? "[Unknown branch]")",
+      isCacheEnabled: self.isAnalyticsCachingEnabled
     )
 
     logger?.debug("Successfully found Circle CI RunEnvironment")
@@ -77,7 +80,8 @@ extension EnvironmentValues {
 
     return RunEnvironment(
       ci: "generic",
-      key: key
+      key: key,
+      isCacheEnabled: self.isAnalyticsCachingEnabled
     )
   }
 
@@ -103,7 +107,8 @@ extension EnvironmentValues {
       branch: self.gitHubRefName,
       commitSha: self.gitHubSha,
       number: runNumber,
-      message: message
+      message: message,
+      isCacheEnabled: self.isAnalyticsCachingEnabled
     )
 
     logger?.debug("Successfully found Github RunEnvironment")
@@ -128,7 +133,8 @@ extension EnvironmentValues {
       branch: self.xcodeBranch,
       commitSha: commitHash,
       number: buildNumber,
-      message: message
+      message: message,
+      isCacheEnabled: self.isAnalyticsCachingEnabled
     )
 
     logger?.debug("Successfully found Xcode Cloud RunEnvironment")

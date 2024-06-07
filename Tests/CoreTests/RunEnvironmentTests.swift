@@ -28,7 +28,8 @@ final class RunEnvironmentTests: XCTestCase {
         jobId: "jobId",
         message: "message",
         version: TestCollector.version,
-        collector: TestCollector.name
+        collector: TestCollector.name,
+        isCacheEnabled: true
       )
     )
   }
@@ -55,7 +56,8 @@ final class RunEnvironmentTests: XCTestCase {
         number: "buildNumber",
         message: "Build #buildNumber on branch main",
         version: TestCollector.version,
-        collector: TestCollector.name
+        collector: TestCollector.name,
+        isCacheEnabled: true
       )
     )
   }
@@ -87,7 +89,8 @@ final class RunEnvironmentTests: XCTestCase {
         number: "runNumber",
         message: "Run #runNumber attempt #runAttempt of workflowName, started by username",
         version: TestCollector.version,
-        collector: TestCollector.name
+        collector: TestCollector.name,
+        isCacheEnabled: true
       )
     )
   }
@@ -116,7 +119,8 @@ final class RunEnvironmentTests: XCTestCase {
         number: "buildNumber",
         message: "Build #buildNumber of workflow: workflowName",
         version: TestCollector.version,
-        collector: TestCollector.name
+        collector: TestCollector.name,
+        isCacheEnabled: true
       )
     )
   }
@@ -136,6 +140,7 @@ final class RunEnvironmentTests: XCTestCase {
       executionNameSuffix: "executionNameSuffix",
       version: "version",
       collector: "collector",
+      isCacheEnabled: true,
       customEnvironment: [
         "custom_key": "customKey",
         "tags": ["A", "B", "C"],
@@ -162,6 +167,7 @@ final class RunEnvironmentTests: XCTestCase {
         "execution_name_suffix": "executionNameSuffix",
         "version": "version",
         "collector": "collector",
+        "isCacheEnabled": "true",
         "custom_key": "customKey",
         "tags": ["A", "B", "C"],
       ]
@@ -171,6 +177,7 @@ final class RunEnvironmentTests: XCTestCase {
   func testCustomEnvironmentTakesPrecedence() throws {
     let runEnvironment = RunEnvironment(
       key: "key",
+      isCacheEnabled: true,
       customEnvironment: [
         "key": "customKey",
       ]
@@ -180,6 +187,12 @@ final class RunEnvironmentTests: XCTestCase {
 
     let json = try JSONSerialization.jsonObject(with: data)
 
-    XCTAssertEqual(json as? NSDictionary, ["key": "customKey"])
+    XCTAssertEqual(
+      json as? NSDictionary,
+      [
+        "key": "customKey",
+        "isCacheEnabled": "true"
+      ]
+    )
   }
 }

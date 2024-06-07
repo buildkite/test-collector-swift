@@ -107,6 +107,7 @@ final class TestObserver: NSObject, XCTestObservation {
   /// work is complete.
   func testBundleDidFinish(_ testBundle: Bundle) {
     self.uploader?.waitForUploads()
+    self.uploader?.saveData()
     self.logger?.waitForLogs()
   }
 }

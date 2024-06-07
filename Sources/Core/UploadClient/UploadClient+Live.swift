@@ -15,7 +15,7 @@ extension UploadClient {
     api: ApiClient,
     runEnvironment: RunEnvironment,
     logger: Logger? = nil,
-    batchSize: Int = maximumBatchSize,
+    batchSize: Int = UploadClient.maximumBatchSize,
     group: DispatchGroup = DispatchGroup()
   ) -> UploadClient {
     let client = LiveClient(
@@ -28,7 +28,8 @@ extension UploadClient {
 
     return UploadClient(
       record: { client.record(trace: $0) },
-      waitForUploads: { client.waitForUploads(timeout: $0) }
+      waitForUploads: { client.waitForUploads(timeout: $0) },
+      storeData: { } // Not storing anything as traces will be uploaded
     )
   }
 
@@ -93,5 +94,7 @@ extension UploadClient {
   }
 }
 
-// The maximum number of traces that can be sent per upload
-private let maximumBatchSize = 5000
+extension UploadClient {
+  // The maximum number of traces that can be sent per upload
+  static let maximumBatchSize = 5000
+}

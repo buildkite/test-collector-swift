@@ -41,6 +41,9 @@ struct RunEnvironment: Equatable {
   /// The name of the collector used.
   var collector: String?
 
+  /// Whether caching is enabled.
+  var isCacheEnabled: Bool
+
   /// A dictionary that contains custom values associated with the test run.
   ///
   /// - Note: Used internally for testing experimental features. If an existing key
@@ -78,6 +81,7 @@ extension RunEnvironment: Encodable {
     static var executionNameSuffix = Self("execution_name_suffix")
     static var version = Self("version")
     static var collector = Self("collector")
+    static var isCacheEnabled = Self("isCacheEnabled")
   }
 
   func encode(to encoder: Encoder) throws {
@@ -95,6 +99,7 @@ extension RunEnvironment: Encodable {
     try container.encodeIfPresent(self.executionNameSuffix, forKey: .executionNameSuffix)
     try container.encodeIfPresent(self.version, forKey: .version)
     try container.encodeIfPresent(self.collector, forKey: .collector)
+    try container.encode(String(self.isCacheEnabled), forKey: .isCacheEnabled)
     for (key, value) in self.customEnvironment ?? [:] {
       try container.encode(value, forKey: CodingKey(key))
     }
