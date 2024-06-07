@@ -8,6 +8,7 @@ class FileController {
   /// - Parameters:
   ///   - data: The data object to be saved on to the disk.
   ///   - fileName: The name to be assigned to the saved object.
+  ///   - fileExtension: The file extension format.
   /// - Returns: The location of where the file is written to.
   @discardableResult
   func saveData<T: Encodable>(
@@ -32,14 +33,11 @@ class FileController {
   }
 
   /// Checks whether a file exists at the given path.
+  /// - Parameters:
+  ///   - path: The path of the file.
   /// - Returns: A boolean value representing whether the file exists.
   func fileExists(at path: String) -> Bool {
     fileManager.fileExists(atPath: path)
-  }
-
-  /// Removes item at the given path.
-  func removeItem(at path: String) throws {
-    try? fileManager.removeItem(atPath: path)
   }
 
   private func getTestCollectorDirectory() throws -> URL {
