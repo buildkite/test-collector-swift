@@ -1,6 +1,10 @@
 import Dispatch
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 extension UploadClient {
   /// Constructs a "live" upload client that uploads traces using an API client.
   ///
@@ -63,19 +67,36 @@ extension UploadClient {
     private func upload(testData: TestResults) async throws {
       self.logger?.debug("Uploading \(testData)")
 
+      var data: Data
+      var response: HTTPURLResponse
       do {
-        let (data, _) = try await self.api.data(for: .upload(testData))
-        guard let result = try? self.api.decode(data, as: UploadResponse.self) else {
-          if let errorMessage = try? self.api.decode(data, as: UploadFailureResponse.self) {
-            throw UploadError.error(message: errorMessage.message)
-          } else {
-            throw UploadError.unknown
-          }
-        }
-        self.logger?.debug("Upload finished - \(result)")
+        (data, response) = try await self.api.data(for: .upload(testData))
       } catch {
-        self.logger?.error("Upload failed - \(error.localizedDescription)")
+        self.logger?.error("Error uploading: \(error.localizedDescription)")
         throw error
+      }
+
+      // Ideally “HTTP 200 OK” etc, but maybe actually “HTTP 200 no error” etc.
+      let statusString = "HTTP \(response.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: response.statusCode))"
+
+      // Currently this should get HTTP 202 Accepted, but let's be a bit permissive to future changes.
+      guard (201...204).contains(response.statusCode) else {
+        if let body = try? self.api.decode(data, as: UploadFailureResponse.self) {
+          self.logger?.error("Unexpected \(statusString), \(body.message)")
+        } else {
+          self.logger?.error("Unexpected \(statusString), (no message)")
+        }
+        throw URLError(.badServerResponse, userInfo: [ NSLocalizedDescriptionKey: "Unexpected \(statusString)" ])
+      }
+
+      do {
+        let result = try self.api.decode(data, as: UploadResponse.self)
+        let uploadID = result.uploadID ?? "(missing)"
+        let uploadURL = result.uploadURL ?? "(missing)"
+        self.logger?.debug("\(statusString), ID: \(uploadID), URL: \(uploadURL)")
+      } catch let decodingError as DecodingError {
+        self.logger?.error("Warning: error decoding body of \(statusString): \(decodingError)")
+        // proceed anyway, since we got an HTTP 2xx, and decoding the response isn't critical
       }
     }
 
