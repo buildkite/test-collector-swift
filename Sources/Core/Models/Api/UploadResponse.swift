@@ -1,30 +1,18 @@
 import Foundation
 
-/// A type returned by the analytics api after uploading test results.
+/// Response from Test Engine API after uploading test results.
 struct UploadResponse: Equatable {
-  /// The uploads identifier.
-  var id: String
+  /// The UUID allocated to this upload
+  var uploadID: String?
 
-  /// The identifier for test run associated to the upload.
-  var runId: String
-
-  /// The number of individual test results that are queued for processing.
-  var queued: Int
-
-  /// The number of test results that were uploaded but will not be processed.
-  var skipped: Int
-
-  /// Any errors that occurred
-  var errors: [String]
+  /// The URL that can be used to view upload details
+  var uploadURL: String?
 }
 
 extension UploadResponse: Decodable {
   enum CodingKeys: String, CodingKey {
-    case id
-    case runId = "run_id"
-    case queued
-    case skipped
-    case errors
+    case uploadID = "upload_id"
+    case uploadURL = "upload_url"
   }
 }
 

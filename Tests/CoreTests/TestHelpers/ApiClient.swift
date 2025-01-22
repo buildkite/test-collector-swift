@@ -16,8 +16,8 @@ extension ApiClient {
   }
 }
 
-extension URLResponse {
-  static func stub(from url: URL = URL(string: "test")!) -> URLResponse {
-    URLResponse(url: url, mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
+extension HTTPURLResponse {
+  static func stub(from url: URL = URL(string: "test")!, status: Int = 200) -> HTTPURLResponse {
+    HTTPURLResponse(url: url, statusCode: status, httpVersion: "1.1", headerFields: nil)!
   }
 }
