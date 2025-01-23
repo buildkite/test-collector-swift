@@ -1,6 +1,6 @@
 # Buildkite Test Collector for Swift (Beta)
 
-Official [Buildkite Test Analytics](https://buildkite.com/test-analytics) collector for Swift test frameworks ✨
+Official [Buildkite Test Engine](https://buildkite.com/platform/test-engine/) collector for Swift test frameworks ✨
 
 ⚒ **Supported test frameworks:** XCTest, Quick, and Nimble.
 
@@ -106,12 +106,12 @@ Key: CI_PULL_REQUEST_HTML_URL, Value: $(CI_PULL_REQUEST_HTML_URL)
 The same key value pairs can be specified in your main bundle's `info.plist` file if you would rather specify them there. Note variables in the environment take precedent over those in the `info.plist` file.
 ### Step 4
 
-Push your changes to a branch, and open a pull request. After a test run has been triggered, results will start appearing in your analytics dashboard.
+Push your changes to a branch, and open a pull request. After a test run has been triggered, results will start appearing in your Test Engine dashboard.
 
 ```bash
-git checkout -b add-buildkite-test-analytics
-git commit -am "Add Buildkite Test Analytics"
-git push origin add-buildkite-test-analytics
+git checkout -b add-buildkite-test-engine
+git commit -am "Add Buildkite Test Engine"
+git push origin add-buildkite-test-engine
 ```
 
 ## 🔍 Debugging
