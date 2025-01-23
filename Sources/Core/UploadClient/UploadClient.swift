@@ -2,18 +2,6 @@ import Foundation
 
 /// A type used to upload traces asynchronously during a test run.
 struct UploadClient {
-  enum UploadError: LocalizedError {
-    case error(message: String)
-    case unknown
-
-    var errorDescription: String? {
-      switch self {
-      case let .error(message): return message
-      case .unknown: return "Unknown Error"
-      }
-    }
-  }
-
   private var record: (Trace) -> Void
   private var waitForUploads: (TimeInterval) -> Void
 

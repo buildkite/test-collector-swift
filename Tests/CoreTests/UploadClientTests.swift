@@ -38,7 +38,7 @@ final class UploadClientTests: XCTestCase {
     let logger = Logger(logLevel: .error) { errorMessage.setValue($0) }
 
     let data = try JSONEncoder().encode(UploadFailureResponse(message: "Something went wrong"))
-    let api = ApiClient { _ in (data, .stub()) }
+    let api = ApiClient { _ in (data, .stub(status: 500)) }
 
     let uploadClient = UploadClient.live(
       api: api,
@@ -51,7 +51,9 @@ final class UploadClientTests: XCTestCase {
     uploadClient.waitForUploads()
     logger.waitForLogs()
 
-    XCTAssertEqual(errorMessage.value, "[BuildkiteTestCollector] error: Upload failed - Something went wrong")
+    // this varies e.g. macOS “internal server error” vs linux “Internal Server Error”
+    let statusName = HTTPURLResponse.localizedString(forStatusCode: 500)
+    XCTAssertEqual(errorMessage.value, "[BuildkiteTestCollector] error: Unexpected HTTP 500 \(statusName), Something went wrong")
   }
 
   func testUploadsInBatchesOf5000ByDefault() throws {
