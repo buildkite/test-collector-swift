@@ -72,6 +72,7 @@ extension EnvironmentValues {
   var analyticsBaseURL: URL? { self.url(for: "BUILDKITE_ANALYTICS_BASE_URL") }
 
   var isAnalyticsDebugEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_DEBUG_ENABLED") ?? false }
+  var isAnalyticsCachingEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_CACHING_ENABLED") ?? true }
 
   var analyticsKey: String? { self.string(for: "BUILDKITE_ANALYTICS_KEY") }
   var analyticsUrl: String? { self.string(for: "BUILDKITE_ANALYTICS_URL") }

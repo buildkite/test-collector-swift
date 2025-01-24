@@ -29,7 +29,11 @@ public struct TestCollector {
       uploader = .live(api: api, runEnvironment: runEnvironment, logger: logger)
     } else {
       logger?.info("TestCollector unable to locate API key. Test results will not be uploaded.")
-      uploader = nil
+      if environment.isAnalyticsCachingEnabled {
+        uploader = .local(runEnvironment: environment.runEnvironment(), logger: logger)
+      } else {
+        uploader = nil
+      }
     }
 
     self.observer = TestObserver(logger: logger, tracer: tracer, uploader: uploader)
