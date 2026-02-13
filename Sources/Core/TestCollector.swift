@@ -64,6 +64,8 @@ public struct TestCollector {
   ///
   /// - Note: It is important that this method does not print to stdout eg. inside the TestCollector.init. Outputting to stdout causes
   /// an error  when using `swift test --list-tests` and `--parallel` on Linux.
+  /// - Parameter uploadTags: Tags to apply to the upload. When the `BUILDKITE_ANALYTICS_TAGS` environment variable is
+  ///   also set, its values take precedence over `uploadTags` for any colliding keys.
   public static func load(uploadTags: [String: String] = [:]) {
     guard self.shared == nil else { return }
     // Need to create environment first with nil logger since we need the environment to make a logger

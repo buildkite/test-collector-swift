@@ -42,7 +42,11 @@ final class TestObserver: NSObject, XCTestObservation {
   ///   - key: The tag key.
   ///   - value: The tag value.
   func setTag(for testCase: XCTestCase, key: String, value: String) {
-    self.executionTags.withValue { $0[ObjectIdentifier(testCase), default: [:]][key] = value }
+    let id = ObjectIdentifier(testCase)
+    self.executionTags.withValue { tags in
+      guard tags[id] != nil else { return }
+      tags[id]?[key] = value
+    }
   }
 
   /// Notifies the observer immediately before a test case begins executing.
