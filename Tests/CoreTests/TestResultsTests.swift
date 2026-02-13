@@ -85,8 +85,9 @@ final class TestResultsTests: XCTestCase {
 
     let testResults = TestResults.json(
       runEnv: RunEnvironment(key: "test"),
+      tags: ["host.arch": "arm64"],
       data: [
-        .init(test: testSuccess, span: .init(section: "span0")),
+        .init(test: testSuccess, span: .init(section: "span0"), tags: ["suite": "smoke"]),
         .init(test: testFailure, span: .init(section: "span1")),
         .init(test: testMultipleFailures, span: .init(section: "span2")),
       ]
@@ -101,6 +102,7 @@ final class TestResultsTests: XCTestCase {
       [
         "format": "json",
         "run_env": ["key": "test"],
+        "tags": ["host.arch": "arm64"],
         "data": [
           NSDictionary(
             dictionary: [
@@ -108,6 +110,7 @@ final class TestResultsTests: XCTestCase {
               "scope": "TestResultsTests",
               "name": "testSuccess",
               "result": "passed",
+              "tags": ["suite": "smoke"],
               "failure_expanded": NSArray(),
               "history": NSDictionary(
                 dictionary: [

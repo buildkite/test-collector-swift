@@ -108,6 +108,29 @@ final class UploadClientTests: XCTestCase {
     XCTAssertEqual(testResults[1].data.map(\.id), (5001...10000).map { "\($0)" })
     XCTAssertEqual(testResults[2].data.map(\.id), (10001...12345).map { "\($0)" })
   }
+
+  func testUploadIncludesTags() throws {
+    let testResults = LockIsolated([TestResults]())
+
+    let api = ApiClient { route in
+      if case let .upload(results) = route {
+        testResults.withValue { $0.append(results) }
+      }
+      return (Data(), .stub())
+    }
+
+    let uploadClient = UploadClient.live(
+      api: api,
+      runEnvironment: EnvironmentValues().runEnvironment(),
+      tags: ["host.arch": "arm64", "cloud.region": "us-east-1"]
+    )
+
+    uploadClient.record(trace: .mock())
+    uploadClient.waitForUploads()
+
+    XCTAssertEqual(testResults.count, 1)
+    XCTAssertEqual(testResults[0].tags, ["host.arch": "arm64", "cloud.region": "us-east-1"])
+  }
 }
 
 extension Trace {

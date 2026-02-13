@@ -13,6 +13,9 @@ final class TestObserver: NSObject, XCTestObservation {
   /// The id associated with the root span of the current test.
   var spanId: AnyHashable?
 
+  /// Per-test execution tags, keyed by test case identity.
+  private let executionTags = LockIsolated([ObjectIdentifier: [String: String]]())
+
   /// Creates a new test observer.
   ///
   /// - Parameters:
@@ -32,10 +35,21 @@ final class TestObserver: NSObject, XCTestObservation {
     self.uuid = uuid
   }
 
+  /// Sets a tag on the execution for the given test case.
+  ///
+  /// - Parameters:
+  ///   - testCase: The test case to tag.
+  ///   - key: The tag key.
+  ///   - value: The tag value.
+  func setTag(for testCase: XCTestCase, key: String, value: String) {
+    self.executionTags.withValue { $0[ObjectIdentifier(testCase), default: [:]][key] = value }
+  }
+
   /// Notifies the observer immediately before a test case begins executing.
   ///
   /// Called exactly once per test case.
   func testCaseWillStart(_ testCase: XCTestCase) {
+    self.executionTags.withValue { $0[ObjectIdentifier(testCase)] = [:] }
     self.spanId = self.tracer.startSpan(section: "top")
     self.test = TestState(
       id: self.uuid(),
@@ -83,6 +97,10 @@ final class TestObserver: NSObject, XCTestObservation {
   ///
   /// Called exactly once per test case.
   func testCaseDidFinish(_ testCase: XCTestCase) {
+    let tags = self.executionTags.withValue { tags -> [String: String]? in
+      let result = tags.removeValue(forKey: ObjectIdentifier(testCase))
+      return result?.isEmpty == true ? nil : result
+    }
     defer {
       spanId = nil
       test = nil
@@ -94,7 +112,7 @@ final class TestObserver: NSObject, XCTestObservation {
 
     test.result = testCase.result
 
-    let trace = Trace(test: test, span: span)
+    let trace = Trace(test: test, span: span, tags: tags)
 
     self.uploader?.record(trace: trace)
   }
