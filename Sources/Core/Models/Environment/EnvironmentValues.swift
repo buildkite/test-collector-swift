@@ -36,6 +36,18 @@ struct EnvironmentValues {
     return dictionary
   }
 
+  func stringDictionary(for key: String) -> [String: String]? {
+    guard let string = self.string(for: key) else { return nil }
+    guard
+      let data = string.data(using: .utf8),
+      let dictionary = try? JSONDecoder().decode([String: String].self, from: data)
+    else {
+      self.logger?.error("\(key) is not a valid json object")
+      return nil
+    }
+    return dictionary
+  }
+
   func string(for key: String, private: Bool = false) -> String? {
     func description(for value: String) -> String {
       `private` ? "<redacted>" : value
@@ -72,6 +84,7 @@ extension EnvironmentValues {
   var analyticsBaseURL: URL? { self.url(for: "BUILDKITE_ANALYTICS_BASE_URL") }
 
   var isAnalyticsDebugEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_DEBUG_ENABLED") ?? false }
+  var analyticsTags: [String: String]? { self.stringDictionary(for: "BUILDKITE_ANALYTICS_TAGS") }
 
   var analyticsKey: String? { self.string(for: "BUILDKITE_ANALYTICS_KEY") }
   var analyticsUrl: String? { self.string(for: "BUILDKITE_ANALYTICS_URL") }

@@ -18,6 +18,7 @@ extension UploadClient {
   static func live(
     api: ApiClient,
     runEnvironment: RunEnvironment,
+    tags: [String: String]? = nil,
     logger: Logger? = nil,
     batchSize: Int = maximumBatchSize,
     group: DispatchGroup = DispatchGroup()
@@ -27,6 +28,7 @@ extension UploadClient {
       batchSize: batchSize,
       logger: logger,
       runEnvironment: runEnvironment,
+      tags: tags,
       taskGroup: group
     )
 
@@ -41,6 +43,7 @@ extension UploadClient {
     let batchSize: Int
     let logger: Logger?
     let runEnvironment: RunEnvironment
+    let tags: [String: String]?
     let taskGroup: DispatchGroup
 
     private let traces = LockIsolated([Trace]())
@@ -59,7 +62,7 @@ extension UploadClient {
       self.taskGroup.enter()
       Task {
         defer { self.taskGroup.leave() }
-        let testData = TestResults.json(runEnv: runEnvironment, data: traces)
+        let testData = TestResults.json(runEnv: runEnvironment, tags: tags, data: traces)
         try await self.upload(testData: testData)
       }
     }

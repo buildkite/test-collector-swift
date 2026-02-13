@@ -11,13 +11,17 @@ public struct TestCollector {
   ///   - logger: A logger.
   init(
     environment: EnvironmentValues,
-    logger: Logger? = nil
+    logger: Logger? = nil,
+    uploadTags: [String: String] = [:]
   ) {
     guard environment.isAnalyticsEnabled else {
       logger?.info("TestCollector disabled. Test results will not be collected.")
       self.observer = nil
       return
     }
+
+    let envTags = environment.analyticsTags ?? [:]
+    let tags = uploadTags.merging(envTags) { _, env in env }
 
     let tracer = Tracer.live()
 
@@ -26,7 +30,7 @@ public struct TestCollector {
       let baseURL = environment.analyticsBaseURL ?? URL(string: Self.baseURL)!
       let api = ApiClient.live(apiToken: apiToken, baseURL: baseURL)
       let runEnvironment = environment.runEnvironment()
-      uploader = .live(api: api, runEnvironment: runEnvironment, logger: logger)
+      uploader = .live(api: api, runEnvironment: runEnvironment, tags: tags.isEmpty ? nil : tags, logger: logger)
     } else {
       logger?.info("TestCollector unable to locate API key. Test results will not be uploaded.")
       uploader = nil
@@ -44,19 +48,29 @@ public struct TestCollector {
     self.observer?.tracer.annotate(content())
   }
 
+  /// Tags the execution of the given test case with a key-value pair.
+  ///
+  /// - Parameters:
+  ///   - testCase: The test case to tag.
+  ///   - key: The tag key.
+  ///   - value: The tag value.
+  public func tagExecution(testCase: XCTestCase, key: String, value: String) {
+    self.observer?.setTag(for: testCase, key: key, value: value)
+  }
+
   /// Configures the shared collector.
   ///
   /// Used by the root target to create a collector and add it to the test observation center.
   ///
   /// - Note: It is important that this method does not print to stdout eg. inside the TestCollector.init. Outputting to stdout causes
   /// an error  when using `swift test --list-tests` and `--parallel` on Linux.
-  public static func load() {
+  public static func load(uploadTags: [String: String] = [:]) {
     guard self.shared == nil else { return }
     // Need to create environment first with nil logger since we need the environment to make a logger
     var environment = EnvironmentValues(logger: nil)
     let logger = Logger(logLevel: environment.isAnalyticsDebugEnabled ? .debug : .info)
     environment.logger = logger
-    let collector = TestCollector(environment: environment, logger: logger)
+    let collector = TestCollector(environment: environment, logger: logger, uploadTags: uploadTags)
     logger.waitForLogs() // Ensures logging is complete to avoid printing to stdout
     self.shared = collector
     self.shared?.observer.map(XCTestObservationCenter.shared.addTestObserver)

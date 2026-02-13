@@ -30,6 +30,9 @@ struct Trace: Equatable {
 
   /// The span for the duration of the test.
   var history: Span
+
+  /// Tags associated with this test execution.
+  var tags: [String: String]?
 }
 
 extension Trace: Encodable {
@@ -43,11 +46,12 @@ extension Trace: Encodable {
     case failureReason = "failure_reason"
     case failureExpanded = "failure_expanded"
     case history
+    case tags
   }
 }
 
 extension Trace {
-  init(test: TestState, span: Span) {
+  init(test: TestState, span: Span, tags: [String: String]? = nil) {
     self.id = test.id.uuidString
     self.scope = test.className
     self.name = test.testName
@@ -64,5 +68,6 @@ extension Trace {
     }
     self.failureExpanded = test.issues.map(Trace.FailureExpanded.init(issue:))
     self.history = span
+    self.tags = tags
   }
 }
