@@ -114,6 +114,41 @@ git commit -am "Add Buildkite Test Engine"
 git push origin add-buildkite-test-engine
 ```
 
+## 🏷 Tagging
+
+You can tag test executions with key-value pairs to filter and group results in [Test Engine](https://buildkite.com/docs/test-engine/test-suites/tags).
+
+### Upload-level tags
+
+Upload-level tags apply to all test executions in a run. Set the `BUILDKITE_ANALYTICS_TAGS` environment variable to a JSON object:
+
+```bash
+export BUILDKITE_ANALYTICS_TAGS='{"host.arch":"arm64","cloud.region":"us-east-1"}'
+```
+
+If you're using an Xcode project, add this to your test scheme or test plan environment variables like the other `BUILDKITE_ANALYTICS_*` variables.
+
+Upload-level tags can also be set programmatically by passing them to `load`. Environment variable tags take precedence over programmatic tags when keys collide:
+
+```swift
+TestCollector.load(uploadTags: ["host.arch": "arm64"])
+```
+
+### Execution-level tags
+
+Tag individual tests from within a test method using the `tagExecution` extension on `XCTestCase`:
+
+```swift
+class PaymentTests: XCTestCase {
+    func testChargeCard() {
+        self.tagExecution("suite", "smoke")
+        self.tagExecution("feature", "payments")
+
+        // ... test code ...
+    }
+}
+```
+
 ## 🔍 Debugging
 
 To enable debugging output, set the `BUILDKITE_ANALYTICS_DEBUG_ENABLED` environment variable to `true`. This also needs
