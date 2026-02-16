@@ -9,6 +9,9 @@ struct TestResults: Equatable {
   /// Test results with matching run_env[key] will be grouped into a single run by Test Engine
   var runEnv: RunEnvironment
 
+  /// Tags to apply to the upload
+  var tags: [String: String]?
+
   /// An array of test executions
   var data: [Trace]
 
@@ -16,10 +19,11 @@ struct TestResults: Equatable {
   ///
   /// - Parameters:
   ///   - runEnv: The run environment for when the data was captured.
+  ///   - tags: Optional tags to apply to the upload.
   ///   - data: An array of test executions.
   /// - Returns: Test results compatible with the JSON API
-  static func json(runEnv: RunEnvironment, data: [Trace]) -> TestResults {
-    TestResults(format: "json", runEnv: runEnv, data: data)
+  static func json(runEnv: RunEnvironment, tags: [String: String]? = nil, data: [Trace]) -> TestResults {
+    TestResults(format: "json", runEnv: runEnv, tags: tags, data: data)
   }
 }
 
@@ -27,6 +31,7 @@ extension TestResults: Encodable {
   enum CodingKeys: String, CodingKey {
     case format
     case runEnv = "run_env"
+    case tags
     case data
   }
 }
