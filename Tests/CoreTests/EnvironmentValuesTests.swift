@@ -48,4 +48,30 @@ final class EnvironmentValuesTests: XCTestCase {
     let environment = EnvironmentValues(getFromEnvironment: { processEnvironment[$0] })
     XCTAssertEqual(environment.url(for: "TEST_URL"), URL(string: "https://api.test.com/")!)
   }
+
+  func testAnalyticsTagsValidJSON() {
+    let environment = EnvironmentValues(values: [
+      "BUILDKITE_ANALYTICS_TAGS": #"{"host.arch":"arm64","cloud.region":"us-east-1"}"#
+    ])
+    XCTAssertEqual(environment.analyticsTags, ["host.arch": "arm64", "cloud.region": "us-east-1"])
+  }
+
+  func testAnalyticsTagsInvalidJSON() {
+    let environment = EnvironmentValues(values: [
+      "BUILDKITE_ANALYTICS_TAGS": "{]"
+    ])
+    XCTAssertNil(environment.analyticsTags)
+  }
+
+  func testAnalyticsTagsNonStringValues() {
+    let environment = EnvironmentValues(values: [
+      "BUILDKITE_ANALYTICS_TAGS": #"{"count":1}"#
+    ])
+    XCTAssertNil(environment.analyticsTags)
+  }
+
+  func testAnalyticsTagsNotSet() {
+    let environment = EnvironmentValues(values: [:])
+    XCTAssertNil(environment.analyticsTags)
+  }
 }

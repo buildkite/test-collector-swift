@@ -21,4 +21,16 @@ final class CollectorTests: XCTestCase {
     let collector = TestCollector(environment: environment)
     XCTAssertNil(collector.observer)
   }
+
+  func testUploadTagsEnvVarTakesPrecedence() {
+    let environment = EnvironmentValues(values: [
+      "BUILDKITE_ANALYTICS_TAGS": #"{"shared":"from-env","env-only":"yes"}"#,
+    ])
+    let envTags = environment.analyticsTags ?? [:]
+    let programmatic = ["shared": "from-code", "code-only": "yes"]
+    let merged = programmatic.merging(envTags) { _, env in env }
+    XCTAssertEqual(merged["shared"], "from-env")
+    XCTAssertEqual(merged["code-only"], "yes")
+    XCTAssertEqual(merged["env-only"], "yes")
+  }
 }
