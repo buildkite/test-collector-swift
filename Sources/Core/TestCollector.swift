@@ -82,5 +82,5 @@ public struct TestCollector {
 
   public static let baseURL = "https://analytics-api.buildkite.com/v1/"
   static let name = "test-collector-swift"
-  static let version = "0.4.1"
+  static let version = "0.6.0"
 }
