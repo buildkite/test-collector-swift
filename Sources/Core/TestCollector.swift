@@ -21,7 +21,13 @@ public struct TestCollector {
     }
 
     let envTags = environment.analyticsTags ?? [:]
-    let tags = uploadTags.merging(envTags) { _, env in env }
+    let callerTags = uploadTags.merging(envTags) { _, env in env }
+    // Tags every execution in the upload with the ID of the agent running it, so
+    // failures can be grouped by worker. Omitted when the agent doesn't expose an
+    // ID (e.g. outside Buildkite), so callers can still supply their own
+    // "ci.worker.id" tag without it being clobbered.
+    let workerIdTag = environment.buildkiteAgentId.map { ["ci.worker.id": $0] } ?? [:]
+    let tags = workerIdTag.merging(callerTags) { _, caller in caller }
 
     let tracer = Tracer.live()
 
