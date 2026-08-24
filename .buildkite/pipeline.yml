@@ -1,0 +1,32 @@
+steps:
+
+  - label: ":swift: Tests (Xcode {{matrix.xcode_version}})"
+    key: swift-test
+    command: "swift test --parallel"
+    branches:
+      - "*"
+    agents:
+      queue: macos
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_{{matrix.xcode_version}}.app/Contents/Developer"
+    matrix:
+      setup: 
+        xcode_version:
+          - "15.2"
+          - "14.3.1"
+
+  - label: ":swift: Build (Xcode {{matrix.xcode_version}})"
+    key: swift-build
+    depends_on: swift-test
+    command: "swift build --configuration release"
+    branches:
+      - "*"
+    agents:
+      queue: macos
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_{{matrix.xcode_version}}.app/Contents/Developer"
+    matrix:
+      setup: 
+        xcode_version:
+          - "15.2"
+          - "14.3.1"

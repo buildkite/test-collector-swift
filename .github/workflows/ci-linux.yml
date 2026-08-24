@@ -1,0 +1,29 @@
+name: Linux Tests
+
+on:
+  push:
+    branches: 
+      - main
+  pull_request:
+    branches: 
+      - main
+  workflow_dispatch:
+
+jobs:
+  linux-tests:
+    name: Swift ${{ matrix.swift-version }} (Linux)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        swift-version:
+          - '5.7.1'
+          - '5.9.2'
+    container:
+      image: swift:${{ matrix.swift-version }}
+    steps:
+    - name: "⬇️ Checkout"
+      uses: actions/checkout@v2
+    - name: "🛠 Build and Run Tests"
+      run: swift test --parallel
+    - name: "🛠 Build Release"
+      run: swift build --configuration release
