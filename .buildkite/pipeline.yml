@@ -1,32 +1,28 @@
+# Monorepo pipeline for test-collector-swift, uploaded by the top-level
+# dispatcher when this project changes. Injected by `ctg gather` from the
+# ctg repo's overlay/ directory during the dry-run era; post-cutover this
+# file is maintained here, in the monorepo.
+#
+# This SHADOWS the source repo's own .buildkite/pipeline.yml, which targets
+# a macOS agent queue (Xcode) that the dry-run target has no agents for.
+# Dry-run-safe: pure test/build steps derived from the source repo's Linux
+# CI (GitHub Actions: swift test + swift build in a swift container).
+#
+# Jobs check out the monorepo root, so commands cd into this project.
+
+agents:
+  queue: hosted
+
 steps:
-
-  - label: ":swift: Tests (Xcode {{matrix.xcode_version}})"
-    key: swift-test
-    command: "swift test --parallel"
-    branches:
-      - "*"
-    agents:
-      queue: macos
-    env:
-      DEVELOPER_DIR: "/Applications/Xcode_{{matrix.xcode_version}}.app/Contents/Developer"
-    matrix:
-      setup: 
-        xcode_version:
-          - "15.2"
-          - "14.3.1"
-
-  - label: ":swift: Build (Xcode {{matrix.xcode_version}})"
-    key: swift-build
-    depends_on: swift-test
-    command: "swift build --configuration release"
-    branches:
-      - "*"
-    agents:
-      queue: macos
-    env:
-      DEVELOPER_DIR: "/Applications/Xcode_{{matrix.xcode_version}}.app/Contents/Developer"
-    matrix:
-      setup: 
-        xcode_version:
-          - "15.2"
-          - "14.3.1"
+  - group: ":swift: test-collector-swift"
+    steps:
+      - label: ":swift: Tests (Linux, Swift {{matrix}})"
+        command:
+          - "cd test-collector-swift"
+          - "swift test --parallel"
+          - "swift build --configuration release"
+        plugins:
+          - docker#v3.7.0:
+              image: "swift:{{matrix}}"
+        matrix:
+          - "5.9.2"
