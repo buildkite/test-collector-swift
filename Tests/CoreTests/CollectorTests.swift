@@ -36,6 +36,25 @@ final class CollectorTests: XCTestCase {
     XCTAssertNil(collector.observer)
   }
 
+  func testWarnsWhenLegacyAnalyticsBaseURLIsIgnored() {
+    let messages = LockIsolated([String]())
+    let logger = Logger(printer: { message in
+      messages.withValue { $0.append(message) }
+    })
+    let environment = EnvironmentValues(values: [
+      "BUILDKITE_ANALYTICS_BASE_URL": "https://example.com/v1/",
+    ])
+
+    _ = TestCollector(environment: environment, logger: logger)
+    logger.waitForLogs()
+
+    XCTAssertTrue(messages.withValue { messages in
+      messages.contains(
+        "[BuildkiteTestCollector] warning: BUILDKITE_ANALYTICS_BASE_URL is no longer supported and is ignored; use BUILDKITE_ANALYTICS_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_TRACES_ENDPOINT instead."
+      )
+    })
+  }
+
   func testUploadTagsEnvVarTakesPrecedence() {
     let environment = EnvironmentValues(values: [
       "BUILDKITE_ANALYTICS_TAGS": #"{"shared":"from-env","env-only":"yes"}"#,

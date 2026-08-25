@@ -81,6 +81,7 @@ struct EnvironmentValues {
 extension EnvironmentValues {
   var isAnalyticsEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_ENABLED") ?? true }
   var analyticsToken: String? { self.string(for: "BUILDKITE_ANALYTICS_TOKEN", private: true) }
+  var legacyAnalyticsBaseURL: String? { self.string(for: "BUILDKITE_ANALYTICS_BASE_URL") }
   var analyticsOTLPEndpoint: String? { self.string(for: "BUILDKITE_ANALYTICS_OTLP_ENDPOINT") }
 
   var isAnalyticsDebugEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_DEBUG_ENABLED") ?? false }

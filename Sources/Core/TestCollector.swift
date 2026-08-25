@@ -20,6 +20,12 @@ public struct TestCollector {
       return
     }
 
+    if environment.legacyAnalyticsBaseURL != nil {
+      logger?.warning(
+        "BUILDKITE_ANALYTICS_BASE_URL is no longer supported and is ignored; use BUILDKITE_ANALYTICS_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_TRACES_ENDPOINT instead."
+      )
+    }
+
     let envTags = environment.analyticsTags ?? [:]
     let tags = uploadTags.merging(envTags) { _, env in env }
 
