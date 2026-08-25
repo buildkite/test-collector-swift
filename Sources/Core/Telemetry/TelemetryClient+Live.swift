@@ -4,6 +4,10 @@ import OpenTelemetryProtocolExporterCommon
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 #if canImport(Darwin)
 import Darwin
 #elseif canImport(Glibc)
@@ -128,6 +132,90 @@ struct CollectorOTLPConfiguration {
   }
 }
 
+private final class SynchronousOtlpTraceExporter: SpanExporter, @unchecked Sendable {
+  private let exporter: OtlpHttpTraceExporter
+  private let httpClient: SynchronousHTTPClient
+
+  init(endpoint: URL, configuration: OtlpConfiguration) {
+    let httpClient = SynchronousHTTPClient(timeout: configuration.timeout)
+    self.httpClient = httpClient
+    self.exporter = OtlpHttpTraceExporter(
+      endpoint: endpoint,
+      config: configuration,
+      httpClient: httpClient,
+      envVarHeaders: nil
+    )
+  }
+
+  func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+    self.httpClient.prepare()
+    _ = self.exporter.export(spans: spans, explicitTimeout: explicitTimeout)
+    return self.httpClient.result
+  }
+
+  func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+    self.exporter.flush(explicitTimeout: explicitTimeout)
+  }
+
+  func shutdown(explicitTimeout: TimeInterval?) {
+    self.exporter.shutdown(explicitTimeout: explicitTimeout)
+  }
+}
+
+private final class SynchronousHTTPClient: HTTPClient {
+  private let lock = NSLock()
+  private let session: URLSession
+  private var wasAccepted: Bool?
+
+  init(timeout: TimeInterval) {
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.timeoutIntervalForRequest = timeout
+    configuration.timeoutIntervalForResource = timeout
+    configuration.urlCache = nil
+    self.session = URLSession(configuration: configuration)
+  }
+
+  func prepare() {
+    self.lock.lock()
+    self.wasAccepted = nil
+    self.lock.unlock()
+  }
+
+  var result: SpanExporterResultCode {
+    self.lock.lock()
+    defer { self.lock.unlock() }
+    return self.wasAccepted == true ? .success : .failure
+  }
+
+  func send(
+    request: URLRequest,
+    completion: @escaping (Result<HTTPURLResponse, Error>) -> Void
+  ) {
+    let semaphore = DispatchSemaphore(value: 0)
+    let task = self.session.dataTask(with: request) { [weak self] _, response, error in
+      let httpResponse = response as? HTTPURLResponse
+      let accepted = error == nil
+        && httpResponse.map { (200..<300).contains($0.statusCode) } == true
+
+      self?.lock.lock()
+      self?.wasAccepted = accepted
+      self?.lock.unlock()
+
+      // The collector owns failed-span requeueing. Always report transport
+      // completion to the upstream exporter so it does not queue a second copy.
+      completion(.success(httpResponse ?? HTTPURLResponse(
+        url: request.url!,
+        statusCode: 500,
+        httpVersion: nil,
+        headerFields: nil
+      )!))
+      semaphore.signal()
+    }
+    task.resume()
+    semaphore.wait()
+  }
+}
+
 extension TelemetryClient {
   static func live(
     environment: EnvironmentValues,
@@ -148,10 +236,9 @@ extension TelemetryClient {
       exportAsJson: false
     )
     let makeExporter = {
-      OtlpHttpTraceExporter(
+      SynchronousOtlpTraceExporter(
         endpoint: configuration.endpoint,
-        config: exporterConfiguration,
-        envVarHeaders: nil
+        configuration: exporterConfiguration
       ) as any SpanExporter
     }
     let live = LiveTelemetryClient(
