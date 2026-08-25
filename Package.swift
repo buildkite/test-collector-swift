@@ -25,7 +25,8 @@ let package = Package(
       name: "Core",
       dependencies: [
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+        .product(name: "CoreMetrics", package: "swift-metrics")
       ]
     ),
     .target(name: "Loader"),
