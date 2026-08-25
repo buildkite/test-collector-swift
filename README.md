@@ -209,12 +209,13 @@ OpenTelemetry SDK provider, the collector adds a forwarding processor without
 replacing its sampler or exporters. Otherwise, it installs a provider so spans
 created under a test can be exported as execution children.
 
-Finishing a test waits for its root span to be accepted by the configured OTLP
-endpoint. A failed root export stays in the collector's in-memory queue
-and is retried by the next execution or the bundle-end flush. When the endpoint
-is the Test Engine Client relay, acceptance transfers the span to the
-longer-lived parent process, which protects completed executions from an XCTest
-runner restart.
+While the endpoint is healthy, finishing a test waits for its root span to be
+accepted by the configured OTLP endpoint. After a failure, subsequent roots stay
+in the collector's in-memory queue while export attempts back off for 10, 20,
+30, and then at most 60 seconds. The bundle-end flush always makes an immediate
+final attempt. When the endpoint is the Test Engine Client relay, acceptance
+transfers the span to the longer-lived parent process, which protects completed
+executions from an XCTest runner restart.
 
 This is not disk-backed delivery. A hard exit before a test finishes, a process
 exit while the endpoint remains unavailable, or a machine restart can still

@@ -269,7 +269,7 @@ final class TelemetryClientTests: XCTestCase {
     XCTAssertNil(span.resource.attributes["branch"])
   }
 
-  func testRetriesFailedExecutionWithTheNextExecution() throws {
+  func testBundleFlushRetriesExecutionsQueuedDuringBackoff() throws {
     let rootExporter = FailOnceExporter()
     let client = try XCTUnwrap(TelemetryClient.live(
       environment: self.configuredEnvironment,
@@ -285,6 +285,9 @@ final class TelemetryClientTests: XCTestCase {
       test.result = .passed
       client.finishExecution(executionID, test: test, tags: nil)
     }
+
+    XCTAssertEqual(rootExporter.exports.count, 1)
+    client.forceFlush()
 
     XCTAssertEqual(rootExporter.exports.count, 2)
     XCTAssertEqual(rootExporter.exports[0].map(\.name), ["test.execution"])
