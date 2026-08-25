@@ -11,7 +11,7 @@ root span. Sampled OpenTelemetry spans created by the code under test can appear
 as its children. Test execution data is submitted only through OTLP; the
 collector does not use the legacy proprietary execution upload API.
 
-The collector requires Swift 6 or newer. Its macOS deployment target is macOS
+The collector requires Swift 5.10 or newer. Its macOS deployment target is macOS
 12 or newer.
 
 ## 👉 Installing

@@ -289,9 +289,7 @@ private final class LiveTelemetryClient {
   private let spans = LockIsolated([UUID: any Span]())
   private let tracer: any OpenTelemetryApi.Tracer
   private let jobSpanContext: SpanContext?
-  #if !canImport(os.activity)
   private let executionContextManager: ExecutionContextManager
-  #endif
 
   init(
     configuration: CollectorOTLPConfiguration,
@@ -331,10 +329,13 @@ private final class LiveTelemetryClient {
     )
     let forwarder = ExecutionChildSpanProcessor(processor: childProcessor, registry: self.registry)
     self.childForwarder = forwarder
-    #if !canImport(os.activity)
-    self.executionContextManager = ExecutionContextManager.shared
+    self.executionContextManager = ExecutionContextManager(
+      delegate: OpenTelemetry.instance.contextProvider
+    )
+    self.executionContextManager.setContextReadHandler { [weak self] in
+      self?.attachChildForwarder()
+    }
     OpenTelemetry.registerContextManager(contextManager: self.executionContextManager)
-    #endif
     self.attachChildForwarder()
   }
 
@@ -369,11 +370,7 @@ private final class LiveTelemetryClient {
     let span = builder.startSpan()
     self.registry.insert(span.context.traceId)
     self.spans.withValue { $0[test.id] = span }
-    #if canImport(os.activity)
-    OpenTelemetry.instance.contextProvider.setActiveSpan(span)
-    #else
     self.executionContextManager.setExecutionSpan(span)
-    #endif
     return test.id
   }
 
@@ -432,11 +429,7 @@ private final class LiveTelemetryClient {
       }
     }
 
-    #if canImport(os.activity)
-    OpenTelemetry.instance.contextProvider.removeContextForSpan(span)
-    #else
     self.executionContextManager.removeExecutionSpan(span)
-    #endif
     self.registry.remove(span.context.traceId)
     span.end()
   }

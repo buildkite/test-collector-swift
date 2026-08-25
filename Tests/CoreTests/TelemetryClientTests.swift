@@ -159,7 +159,7 @@ final class TelemetryClientTests: XCTestCase {
     XCTAssertEqual(span.links.only?.context.spanId.hexString, "00f067aa0ba902b7")
   }
 
-  func testExportsSpansFromAReplacementProviderAsExecutionChildren() throws {
+  func testExportsSpansFromAProviderRegisteredAfterExecutionStarts() throws {
     let rootExporter = InMemoryExporter()
     let childExporter = InMemoryExporter()
     let client = try XCTUnwrap(TelemetryClient.live(
@@ -169,13 +169,13 @@ final class TelemetryClientTests: XCTestCase {
       rootExporter: rootExporter,
       childExporter: childExporter
     ))
+    var test = TestState(id: UUID(), className: "ChildTests", testName: "testChild")
+
+    let executionID = client.startExecution(test)
     let replacementProvider = TracerProviderBuilder()
       .with(sampler: Samplers.alwaysOn)
       .build()
     OpenTelemetry.registerTracerProvider(tracerProvider: replacementProvider)
-    var test = TestState(id: UUID(), className: "ChildTests", testName: "testChild")
-
-    let executionID = client.startExecution(test)
     let child = OpenTelemetry.instance.tracerProvider
       .get(instrumentationName: "example-app")
       .spanBuilder(spanName: "database.query")
