@@ -23,6 +23,7 @@ steps:
           - docker#v3.7.0:
               image: "swift:{{matrix}}"
         matrix:
+          - "5.10.1"
           - "6.0.3"
 
       - label: ":swift: Tests (macOS, {{matrix}})"
