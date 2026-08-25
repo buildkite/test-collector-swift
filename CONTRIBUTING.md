@@ -43,7 +43,9 @@ Once a Code Owner has reviewed your PR, you might need to make changes before it
 
 When you are done addressing your review, make sure you alert the reviewer in a comment or via GitHub's re-request review command. See [GitHub's documentation for dealing with Pull Requests][pr-docs].
 
-After your contribution is merged, users can access it immediately by pointing to the main branch; otherwise, your changes will be included in the next release.
+After your contribution is merged, users can access it by pointing to the main
+branch. New tagged releases are currently paused; see the monorepo's
+[collector release guide](../RELEASING.md#swift-swift-package-manager).
 
 ## 🤝 Code of Conduct
 

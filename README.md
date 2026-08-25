@@ -164,6 +164,12 @@ See the [GitHub 'enhancement' issues](https://github.com/buildkite/test-collecto
 
 Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTING.md).
 
+## 🚀 Releasing
+
+New releases are currently paused. See the monorepo's
+[collector release guide](../RELEASING.md#swift-swift-package-manager) for
+the distribution constraint and current status.
+
 ## 📜 License
 
 The package is available as open source under the terms of the [MIT License](https://github.com/buildkite/test-collector-swift/blob/main/LICENSE).
