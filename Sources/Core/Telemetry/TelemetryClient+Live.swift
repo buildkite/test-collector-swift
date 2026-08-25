@@ -151,8 +151,7 @@ extension TelemetryClient {
       OtlpHttpTraceExporter(
         endpoint: configuration.endpoint,
         config: exporterConfiguration,
-        envVarHeaders: nil,
-        requeueOnFailure: true
+        envVarHeaders: nil
       ) as any SpanExporter
     }
     let live = LiveTelemetryClient(

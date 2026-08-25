@@ -210,6 +210,31 @@ final class TelemetryClientTests: XCTestCase {
     XCTAssertEqual(configuration.header(named: "x-test"), "value/one")
   }
 
+  func testRetriesFailedExecutionWithTheNextExecution() throws {
+    let rootExporter = FailOnceExporter()
+    let client = try XCTUnwrap(TelemetryClient.live(
+      environment: self.configuredEnvironment,
+      uploadTags: [:],
+      logger: nil,
+      rootExporter: rootExporter,
+      childExporter: InMemoryExporter()
+    ))
+
+    for name in ["testOne", "testTwo"] {
+      var test = TestState(id: UUID(), className: "RetryTests", testName: name)
+      let executionID = client.startExecution(test)
+      test.result = .passed
+      client.finishExecution(executionID, test: test, tags: nil)
+    }
+
+    XCTAssertEqual(rootExporter.exports.count, 2)
+    XCTAssertEqual(rootExporter.exports[0].map(\.name), ["test.execution"])
+    XCTAssertEqual(
+      rootExporter.exports[1].map(\.attributes[BuildkiteTelemetryAttribute.testName]),
+      [.string("testOne"), .string("testTwo")]
+    )
+  }
+
   private var configuredEnvironment: EnvironmentValues {
     EnvironmentValues(
       values: [
@@ -232,4 +257,19 @@ private extension CollectorOTLPConfiguration {
   func header(named name: String) -> String? {
     self.headers.first { $0.0.caseInsensitiveCompare(name) == .orderedSame }?.1
   }
+}
+
+private final class FailOnceExporter: SpanExporter, @unchecked Sendable {
+  var exports = [[SpanData]]()
+
+  func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+    self.exports.append(spans)
+    return self.exports.count == 1 ? .failure : .success
+  }
+
+  func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+    .success
+  }
+
+  func shutdown(explicitTimeout: TimeInterval?) {}
 }

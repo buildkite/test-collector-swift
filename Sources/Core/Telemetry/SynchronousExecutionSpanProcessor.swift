@@ -9,6 +9,7 @@ final class SynchronousExecutionSpanProcessor: SpanProcessor {
   private let exporter: any SpanExporter
   private let exporterLock = NSLock()
   private let logger: Logger?
+  private var pending = [SpanData]()
 
   init(exporter: any SpanExporter, logger: Logger?) {
     self.exporter = exporter
@@ -22,8 +23,10 @@ final class SynchronousExecutionSpanProcessor: SpanProcessor {
     defer { self.exporterLock.unlock() }
 
     let name = span.getAttributes()[BuildkiteTelemetryAttribute.testName]?.description ?? span.name
-    switch self.exporter.export(spans: [span.toSpanData()]) {
+    self.pending.append(span.toSpanData())
+    switch self.exporter.export(spans: self.pending) {
     case .success:
+      self.pending.removeAll()
       self.logger?.debug("Exported OpenTelemetry test execution: \(name)")
     case .failure:
       self.logger?.error(
@@ -46,6 +49,14 @@ final class SynchronousExecutionSpanProcessor: SpanProcessor {
   }
 
   private func flush(timeout: TimeInterval?) {
+    if !self.pending.isEmpty {
+      switch self.exporter.export(spans: self.pending, explicitTimeout: timeout) {
+      case .success:
+        self.pending.removeAll()
+      case .failure:
+        self.logger?.error("OpenTelemetry export failed while retrying pending test executions")
+      }
+    }
     if case .failure = self.exporter.flush(explicitTimeout: timeout) {
       self.logger?.error("OpenTelemetry export failed while flushing pending test executions")
     }
