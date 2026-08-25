@@ -14,8 +14,9 @@ let package = Package(
     .library(name: "BuildkiteTestCollector", targets: ["BuildkiteTestCollector"])
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift", exact: "2.3.0"),
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core", exact: "2.3.0"),
+    // OpenTelemetry 2.2.1 and later require a Swift 6.1-only grpc-swift release.
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift", exact: "2.2.0"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core", exact: "2.2.0"),
     // Keep Swift 6.0 compatibility; swift-metrics 2.9 requires Swift 6.1.
     .package(url: "https://github.com/apple/swift-metrics", exact: "2.8.0")
   ],
