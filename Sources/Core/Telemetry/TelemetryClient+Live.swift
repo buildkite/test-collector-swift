@@ -1,0 +1,446 @@
+import Foundation
+import OpenTelemetryApi
+import OpenTelemetryProtocolExporterCommon
+import OpenTelemetryProtocolExporterHttp
+import OpenTelemetrySdk
+
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
+
+enum BuildkiteTelemetryAttribute {
+  static let annotation = "buildkite.annotation"
+  static let buildID = "buildkite.build_id"
+  static let buildNumber = "buildkite.build_number"
+  static let collectorName = "buildkite.collector.name"
+  static let collectorVersion = "buildkite.collector.version"
+  static let executionExternalID = "buildkite.test.execution.external_id"
+  static let executionLocation = "buildkite.test.location"
+  static let executionScope = "buildkite.test.scope"
+  static let executionVia = "buildkite.execution.via"
+  static let frameworkName = "buildkite.test.framework.name"
+  static let jobID = "buildkite.job_id"
+  static let message = "buildkite.message"
+  static let runKey = "buildkite.run_key"
+  static let runURL = "buildkite.run_url"
+  static let stepID = "buildkite.step_id"
+  static let tagPrefix = "buildkite.tag."
+  static let testName = "buildkite.test.name"
+}
+
+private enum TelemetryValue {
+  static let executionVia = "otlp"
+  static let frameworkName = "xctest"
+  static let rootSpanName = "test.execution"
+  static let skippedResult = "skipped"
+}
+
+struct CollectorOTLPConfiguration {
+  let endpoint: URL
+  let headers: [(String, String)]
+  let runEnvironment: RunEnvironment
+
+  init?(
+    environment: EnvironmentValues,
+    logger: Logger?
+  ) {
+    let runEnvironment = environment.runEnvironment()
+    let rawHeaders = environment.otelTracesHeaders ?? environment.otelHeaders
+    let hasExplicitConfiguration = environment.otelTracesEndpoint != nil
+      || environment.otelEndpoint != nil
+      || environment.analyticsOTLPEndpoint != nil
+      || rawHeaders != nil
+
+    guard environment.analyticsToken != nil || hasExplicitConfiguration else { return nil }
+
+    if let protocolName = environment.otelTracesProtocol ?? environment.otelProtocol,
+       protocolName.lowercased() != "http/protobuf" {
+      logger?.error(
+        "Unsupported OpenTelemetry traces protocol \(protocolName); expected http/protobuf"
+      )
+      return nil
+    }
+
+    let endpoint: URL
+    if let value = environment.otelTracesEndpoint ?? environment.analyticsOTLPEndpoint {
+      guard let url = Self.absoluteURL(value) else {
+        logger?.error("OpenTelemetry traces endpoint is not a valid absolute URL")
+        return nil
+      }
+      endpoint = url
+    } else if let value = environment.otelEndpoint {
+      guard let url = Self.absoluteURL(value) else {
+        logger?.error("OpenTelemetry endpoint is not a valid absolute URL")
+        return nil
+      }
+      endpoint = url.appendingPathComponent("v1/traces")
+    } else {
+      endpoint = URL(string: TestCollector.endpoint)!
+    }
+
+    var headers = [("Buildkite-Tests-Run-Key", runEnvironment.key)]
+    if let token = environment.analyticsToken {
+      headers.append(("Authorization", "Token token=\"\(token)\""))
+    }
+
+    if let rawHeaders {
+      guard let parsedHeaders = Self.parseHeaders(rawHeaders) else {
+        logger?.error("OpenTelemetry exporter headers are invalid")
+        return nil
+      }
+      for header in parsedHeaders {
+        headers.removeAll { $0.0.caseInsensitiveCompare(header.0) == .orderedSame }
+        headers.append(header)
+      }
+    }
+
+    self.endpoint = endpoint
+    self.headers = headers
+    self.runEnvironment = runEnvironment
+  }
+
+  private static func absoluteURL(_ value: String) -> URL? {
+    guard let url = URL(string: value), url.scheme != nil, url.host != nil else { return nil }
+    return url
+  }
+
+  private static func parseHeaders(_ value: String) -> [(String, String)]? {
+    let entries = value.split(separator: ",", omittingEmptySubsequences: false)
+    guard !entries.isEmpty else { return nil }
+
+    var headers: [(String, String)] = []
+    for entry in entries {
+      let parts = entry.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+      guard parts.count == 2 else { return nil }
+
+      let name = String(parts[0]).removingPercentEncoding?
+        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+      let value = String(parts[1]).removingPercentEncoding?
+        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+      guard !name.isEmpty, !value.isEmpty else { return nil }
+
+      headers.removeAll { $0.0.caseInsensitiveCompare(name) == .orderedSame }
+      headers.append((name, value))
+    }
+    return headers
+  }
+}
+
+extension TelemetryClient {
+  static func live(
+    environment: EnvironmentValues,
+    uploadTags: [String: String],
+    logger: Logger?,
+    rootExporter: (any SpanExporter)? = nil,
+    childExporter: (any SpanExporter)? = nil
+  ) -> TelemetryClient? {
+    guard let configuration = CollectorOTLPConfiguration(
+      environment: environment,
+      logger: logger
+    ) else { return nil }
+
+    let exporterConfiguration = OtlpConfiguration(
+      timeout: 10,
+      compression: .gzip,
+      headers: configuration.headers,
+      exportAsJson: false
+    )
+    let makeExporter = {
+      OtlpHttpTraceExporter(
+        endpoint: configuration.endpoint,
+        config: exporterConfiguration,
+        envVarHeaders: nil,
+        requeueOnFailure: true
+      ) as any SpanExporter
+    }
+    let live = LiveTelemetryClient(
+      configuration: configuration,
+      environment: environment,
+      uploadTags: uploadTags,
+      logger: logger,
+      rootExporter: rootExporter ?? makeExporter(),
+      childExporter: childExporter ?? makeExporter()
+    )
+
+    return TelemetryClient(
+      start: live.startExecution,
+      annotate: live.annotate,
+      finish: live.finishExecution,
+      flush: live.forceFlush
+    )
+  }
+}
+
+private final class LiveTelemetryClient {
+  private static let providerEnvironmentLock = NSLock()
+
+  private let childForwarder: ExecutionChildSpanProcessor?
+  private let executionProvider: TracerProviderSdk
+  private let logger: Logger?
+  private let registry = ExecutionTraceRegistry()
+  private let spans = LockIsolated([UUID: any Span]())
+  private let tracer: any OpenTelemetryApi.Tracer
+  private let jobSpanContext: SpanContext?
+
+  init(
+    configuration: CollectorOTLPConfiguration,
+    environment: EnvironmentValues,
+    uploadTags: [String: String],
+    logger: Logger?,
+    rootExporter: any SpanExporter,
+    childExporter: any SpanExporter
+  ) {
+    self.logger = logger
+    self.jobSpanContext = Self.jobSpanContext(environment: environment)
+
+    let resource = Self.resource(
+      configuration: configuration,
+      environment: environment,
+      uploadTags: uploadTags
+    )
+    let rootProcessor = SynchronousExecutionSpanProcessor(exporter: rootExporter, logger: logger)
+    self.executionProvider = Self.makeProvider(
+      resource: resource,
+      processor: rootProcessor
+    )
+    self.tracer = self.executionProvider.get(
+      instrumentationName: TestCollector.name,
+      instrumentationVersion: TestCollector.version
+    )
+
+    let childProcessor = BatchSpanProcessor(
+      spanExporter: childExporter,
+      scheduleDelay: 1,
+      exportTimeout: 30,
+      maxQueueSize: 8192,
+      maxExportBatchSize: 512
+    )
+    let forwarder = ExecutionChildSpanProcessor(processor: childProcessor, registry: self.registry)
+    let globalProvider = OpenTelemetry.instance.tracerProvider
+    if globalProvider is DefaultTracerProvider {
+      let provider = Self.makeProvider(resource: resource, processor: forwarder)
+      OpenTelemetry.registerTracerProvider(tracerProvider: provider)
+      self.childForwarder = forwarder
+    } else if let provider = globalProvider as? TracerProviderSdk {
+      provider.addSpanProcessor(forwarder)
+      self.childForwarder = forwarder
+    } else {
+      logger?.error(
+        "OpenTelemetry child span export is disabled because the existing tracer provider cannot accept a span processor"
+      )
+      self.childForwarder = nil
+    }
+  }
+
+  func startExecution(_ test: TestState) -> UUID {
+    let builder = self.tracer
+      .spanBuilder(spanName: TelemetryValue.rootSpanName)
+      .setNoParent()
+      .setAttribute(key: BuildkiteTelemetryAttribute.executionVia, value: TelemetryValue.executionVia)
+      .setAttribute(key: BuildkiteTelemetryAttribute.executionScope, value: test.className)
+      .setAttribute(key: BuildkiteTelemetryAttribute.testName, value: test.testName)
+      .setAttribute(
+        key: BuildkiteTelemetryAttribute.executionExternalID,
+        value: test.id.uuidString
+      )
+      .setAttribute(
+        key: SemanticConventions.Test.caseName.rawValue,
+        value: "\(test.className).\(test.testName)"
+      )
+      .setAttribute(key: SemanticConventions.Test.suiteName.rawValue, value: test.className)
+
+    if let jobSpanContext = self.jobSpanContext {
+      builder.addLink(spanContext: jobSpanContext)
+    }
+
+    let span = builder.startSpan()
+    self.registry.insert(span.context.traceId)
+    self.spans.withValue { $0[test.id] = span }
+    OpenTelemetry.instance.contextProvider.setActiveSpan(span)
+    return test.id
+  }
+
+  func annotate(executionID: UUID, content: String) {
+    guard let span = self.spans.withValue({ $0[executionID] }) else { return }
+    span.addEvent(
+      name: "test.annotation",
+      attributes: [BuildkiteTelemetryAttribute.annotation: .string(content)]
+    )
+  }
+
+  func finishExecution(executionID: UUID, test: TestState, tags: [String: String]?) {
+    guard let span = self.spans.withValue({ $0.removeValue(forKey: executionID) }) else { return }
+
+    for (key, value) in tags ?? [:] {
+      span.setAttribute(key: BuildkiteTelemetryAttribute.tagPrefix + key, value: value)
+    }
+
+    let result = test.result ?? .failed
+    span.setAttribute(
+      key: SemanticConventions.Test.caseResultStatus.rawValue,
+      value: Self.resultStatus(result)
+    )
+
+    if let location = test.issues.first?.sourceCodeContext.location {
+      span.setAttribute(key: SemanticConventions.Code.filePath.rawValue, value: location.filePath)
+      span.setAttribute(key: SemanticConventions.Code.lineNumber.rawValue, value: Int(location.line))
+      span.setAttribute(
+        key: BuildkiteTelemetryAttribute.executionLocation,
+        value: "\(location.fileName):\(location.line)"
+      )
+    }
+
+    if result == .failed {
+      let reason = Self.failureReason(test.issues)
+      span.status = .error(description: reason)
+      for issue in test.issues {
+        var attributes: [String: AttributeValue] = [
+          SemanticConventions.Exception.message.rawValue: .string(issue.description),
+        ]
+        let backtrace = issue.sourceCodeContext.callStack.enumerated()
+          .map { "\($0.offset) \($0.element)" }
+          .joined(separator: "\n")
+        if !backtrace.isEmpty {
+          attributes[SemanticConventions.Exception.stacktrace.rawValue] = .string(backtrace)
+        }
+        if let error = issue.associatedError {
+          attributes[SemanticConventions.Exception.type.rawValue] = .string(
+            String(reflecting: type(of: error))
+          )
+        }
+        span.addEvent(
+          name: SemanticConventions.Exception.exception.rawValue,
+          attributes: attributes
+        )
+      }
+    }
+
+    OpenTelemetry.instance.contextProvider.removeContextForSpan(span)
+    self.registry.remove(span.context.traceId)
+    span.end()
+  }
+
+  func forceFlush() {
+    self.executionProvider.forceFlush(timeout: 30)
+    self.childForwarder?.forceFlush(timeout: 30)
+  }
+
+  private static func resultStatus(_ result: TestResult) -> String {
+    switch result {
+    case .passed:
+      return SemanticConventions.Test.CaseResultStatusValues.pass.description
+    case .failed:
+      return SemanticConventions.Test.CaseResultStatusValues.fail.description
+    case .skipped:
+      return TelemetryValue.skippedResult
+    }
+  }
+
+  private static func failureReason(_ issues: [TestIssue]) -> String {
+    if issues.count > 1 {
+      return "\(issues.count) failures: \(issues.map(\.compactDescription).joined(separator: ", "))"
+    }
+    return issues.first?.compactDescription ?? "Test failed"
+  }
+
+  private static func makeProvider(
+    resource: Resource,
+    processor: any SpanProcessor
+  ) -> TracerProviderSdk {
+    self.withoutInheritedTraceContext {
+      TracerProviderBuilder()
+        .with(resource: resource)
+        .with(sampler: Samplers.alwaysOn)
+        .add(spanProcessor: processor)
+        .build()
+    }
+  }
+
+  private static func withoutInheritedTraceContext<T>(_ operation: () -> T) -> T {
+    self.providerEnvironmentLock.lock()
+    defer { self.providerEnvironmentLock.unlock() }
+
+    let names = ["TRACEPARENT", "TRACESTATE"]
+    let previous = Dictionary(uniqueKeysWithValues: names.map { name in
+      (name, getenv(name).map { String(cString: $0) })
+    })
+    names.forEach { unsetenv($0) }
+    defer {
+      for name in names {
+        if let value = previous[name] ?? nil {
+          setenv(name, value, 1)
+        } else {
+          unsetenv(name)
+        }
+      }
+    }
+    return operation()
+  }
+
+  private static func resource(
+    configuration: CollectorOTLPConfiguration,
+    environment: EnvironmentValues,
+    uploadTags: [String: String]
+  ) -> Resource {
+    let run = configuration.runEnvironment
+    var attributes = [String: AttributeValue]()
+
+    func set(_ key: String, _ value: String?) {
+      if let value, Self.validAttributeKey(key) {
+        attributes[key] = .string(value)
+      }
+    }
+
+    set(SemanticConventions.Service.name.rawValue, environment.testEngineSuiteSlug ?? TestCollector.name)
+    set(SemanticConventions.Service.namespace.rawValue, environment.buildkiteOrganizationSlug)
+    set(SemanticConventions.Service.instanceId.rawValue, run.jobId)
+    set(BuildkiteTelemetryAttribute.runKey, run.key)
+    set(BuildkiteTelemetryAttribute.runURL, run.url)
+    set(SemanticConventions.Vcs.refHeadName.rawValue, run.branch)
+    set(SemanticConventions.Vcs.refHeadRevision.rawValue, run.commitSha)
+    if run.branch != nil {
+      set(
+        SemanticConventions.Vcs.refHeadType.rawValue,
+        environment.buildkiteTag == nil ? "branch" : "tag"
+      )
+    }
+    set(BuildkiteTelemetryAttribute.buildNumber, run.number)
+    set(BuildkiteTelemetryAttribute.buildID, environment.buildkiteBuildId)
+    set(BuildkiteTelemetryAttribute.jobID, run.jobId)
+    set(BuildkiteTelemetryAttribute.stepID, environment.buildkiteStepId)
+    set(BuildkiteTelemetryAttribute.message, run.message)
+    set(BuildkiteTelemetryAttribute.collectorName, run.collector)
+    set(BuildkiteTelemetryAttribute.collectorVersion, run.version)
+    set(BuildkiteTelemetryAttribute.frameworkName, TelemetryValue.frameworkName)
+
+    for (key, value) in uploadTags {
+      set(BuildkiteTelemetryAttribute.tagPrefix + key, value)
+    }
+    for (key, value) in run.customEnvironment ?? [:] where Self.validAttributeKey(key) {
+      attributes[key] = AttributeValue(value.base) ?? .string(value.description)
+    }
+
+    return EnvVarResource.get().merging(other: Resource(attributes: attributes))
+  }
+
+  private static func validAttributeKey(_ key: String) -> Bool {
+    !key.isEmpty && key.count <= 255 && key.unicodeScalars.allSatisfy { (32...126).contains($0.value) }
+  }
+
+  private static func jobSpanContext(environment: EnvironmentValues) -> SpanContext? {
+    guard let traceParent = environment.traceParent else { return nil }
+    let carrier = [
+      "traceparent": traceParent,
+      "tracestate": environment.traceState ?? "",
+    ]
+    return W3CTraceContextPropagator().extract(carrier: carrier, getter: DictionaryGetter())
+  }
+
+  private struct DictionaryGetter: Getter {
+    func get(carrier: [String: String], key: String) -> [String]? {
+      carrier[key].map { [$0] }
+    }
+  }
+}
