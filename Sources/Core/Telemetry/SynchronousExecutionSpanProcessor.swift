@@ -35,6 +35,9 @@ final class SynchronousExecutionSpanProcessor: SpanProcessor {
     let name = span.getAttributes()[BuildkiteTelemetryAttribute.testName]?.description ?? span.name
     self.pending.append(span.toSpanData())
     if let retryNotBefore = self.retryNotBefore, self.now() < retryNotBefore {
+      self.logger?.debug(
+        "Queued OpenTelemetry test execution during export backoff: \(name) (\(self.pending.count) pending)"
+      )
       return
     }
 

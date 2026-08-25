@@ -7,7 +7,7 @@ final class SynchronousExecutionSpanProcessorTests: XCTestCase {
   func testBacksOffFailedExportsAndResetsAfterSuccess() {
     let clock = TestClock()
     let exporter = SequencedExporter(results: [
-      .failure, .failure, .failure, .failure, .failure, .success, .success,
+      .failure, .failure, .failure, .failure, .failure, .success, .failure, .success,
     ])
     let processor = SynchronousExecutionSpanProcessor(
       exporter: exporter,
@@ -51,9 +51,42 @@ final class SynchronousExecutionSpanProcessorTests: XCTestCase {
     clock.now = 180
     self.endSpan("twelve", with: tracer)
     self.endSpan("thirteen", with: tracer)
-
+    clock.now = 189
+    self.endSpan("fourteen", with: tracer)
     XCTAssertEqual(exporter.exports.count, 7)
-    XCTAssertEqual(exporter.exports.map(\.count), [1, 4, 6, 8, 10, 12, 1])
+
+    clock.now = 190
+    self.endSpan("fifteen", with: tracer)
+
+    XCTAssertEqual(exporter.exports.count, 8)
+    XCTAssertEqual(exporter.exports.map(\.count), [1, 4, 6, 8, 10, 12, 1, 3])
+  }
+
+  func testLogsExecutionsQueuedDuringBackoff() {
+    let clock = TestClock()
+    let exporter = SequencedExporter(results: [.failure])
+    let messages = LockIsolated([String]())
+    let logger = Logger(logLevel: .debug, printer: { message in
+      messages.withValue { $0.append(message) }
+    })
+    let processor = SynchronousExecutionSpanProcessor(
+      exporter: exporter,
+      logger: logger,
+      now: { clock.now }
+    )
+    let tracer = TracerProviderSdk(spanProcessors: [processor]).get(
+      instrumentationName: "SynchronousExecutionSpanProcessorTests"
+    )
+
+    self.endSpan("one", with: tracer)
+    self.endSpan("two", with: tracer)
+    logger.waitForLogs()
+
+    XCTAssertTrue(messages.withValue { messages in
+      messages.contains(
+        "[BuildkiteTestCollector] debug: Queued OpenTelemetry test execution during export backoff: two (2 pending)"
+      )
+    })
   }
 
   private func endSpan(_ name: String, with tracer: any Tracer) {
