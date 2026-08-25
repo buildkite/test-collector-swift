@@ -14,10 +14,10 @@ let package = Package(
     .library(name: "BuildkiteTestCollector", targets: ["BuildkiteTestCollector"])
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift", exact: "2.4.1"),
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core", exact: "2.4.2"),
-    // Keep Swift 6.0 compatibility; swift-metrics 2.11 requires Swift 6.1.
-    .package(url: "https://github.com/apple/swift-metrics", exact: "2.10.1")
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift", exact: "2.3.0"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core", exact: "2.3.0"),
+    // Keep Swift 6.0 compatibility; swift-metrics 2.9 requires Swift 6.1.
+    .package(url: "https://github.com/apple/swift-metrics", exact: "2.8.0")
   ],
   targets: [
     .target(name: "BuildkiteTestCollector", dependencies: ["Core", "Loader"]),
