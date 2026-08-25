@@ -64,8 +64,10 @@ export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL="http/protobuf"
 The signal-specific variables take precedence over
 `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, and
 `OTEL_EXPORTER_OTLP_PROTOCOL`. A generic OTLP endpoint has `/v1/traces`
-appended. `BUILDKITE_ANALYTICS_OTLP_ENDPOINT` remains available as a
-collector-specific endpoint override.
+appended. Standard endpoints receive only the explicitly configured OTLP
+headers; the collector does not send the Buildkite suite token to them.
+`BUILDKITE_ANALYTICS_OTLP_ENDPOINT` remains available as a trusted,
+collector-specific endpoint override that receives the suite token and run key.
 
 ### Step 3
 

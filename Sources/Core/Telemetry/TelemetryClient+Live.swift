@@ -50,7 +50,8 @@ struct CollectorOTLPConfiguration {
     environment: EnvironmentValues,
     logger: Logger?
   ) {
-    let runEnvironment = environment.runEnvironment()
+    var runEnvironment = environment.runEnvironment()
+    runEnvironment.applyCustomEnvironmentOverrides()
     let rawHeaders = environment.otelTracesHeaders ?? environment.otelHeaders
     let hasExplicitConfiguration = environment.otelTracesEndpoint != nil
       || environment.otelEndpoint != nil
@@ -68,25 +69,39 @@ struct CollectorOTLPConfiguration {
     }
 
     let endpoint: URL
-    if let value = environment.otelTracesEndpoint ?? environment.analyticsOTLPEndpoint {
+    let usesBuildkiteCredentials: Bool
+    if let value = environment.otelTracesEndpoint {
       guard let url = Self.absoluteURL(value) else {
         logger?.error("OpenTelemetry traces endpoint is not a valid absolute URL")
         return nil
       }
       endpoint = url
+      usesBuildkiteCredentials = false
+    } else if let value = environment.analyticsOTLPEndpoint {
+      guard let url = Self.absoluteURL(value) else {
+        logger?.error("OpenTelemetry traces endpoint is not a valid absolute URL")
+        return nil
+      }
+      endpoint = url
+      usesBuildkiteCredentials = true
     } else if let value = environment.otelEndpoint {
       guard let url = Self.absoluteURL(value) else {
         logger?.error("OpenTelemetry endpoint is not a valid absolute URL")
         return nil
       }
       endpoint = url.appendingPathComponent("v1/traces")
+      usesBuildkiteCredentials = false
     } else {
       endpoint = URL(string: TestCollector.endpoint)!
+      usesBuildkiteCredentials = true
     }
 
-    var headers = [("Buildkite-Tests-Run-Key", runEnvironment.key)]
-    if let token = environment.analyticsToken {
-      headers.append(("Authorization", "Token token=\"\(token)\""))
+    var headers = [(String, String)]()
+    if usesBuildkiteCredentials {
+      headers.append(("Buildkite-Tests-Run-Key", runEnvironment.key))
+      if let token = environment.analyticsToken {
+        headers.append(("Authorization", "Token token=\"\(token)\""))
+      }
     }
 
     if let rawHeaders {
@@ -262,13 +277,21 @@ extension TelemetryClient {
 private final class LiveTelemetryClient {
   private static let providerEnvironmentLock = NSLock()
 
-  private let childForwarder: ExecutionChildSpanProcessor?
+  private let attachedChildProviders = LockIsolated([TracerProviderSdk]())
+  private let childForwarder: ExecutionChildSpanProcessor
+  private let childProviderResource: Resource
   private let executionProvider: TracerProviderSdk
+  private let executionNamePrefix: String?
+  private let executionNameSuffix: String?
   private let logger: Logger?
   private let registry = ExecutionTraceRegistry()
+  private let reportedUnsupportedChildProvider = LockIsolated(false)
   private let spans = LockIsolated([UUID: any Span]())
   private let tracer: any OpenTelemetryApi.Tracer
   private let jobSpanContext: SpanContext?
+  #if !canImport(os.activity)
+  private let executionContextManager: ExecutionContextManager
+  #endif
 
   init(
     configuration: CollectorOTLPConfiguration,
@@ -278,6 +301,8 @@ private final class LiveTelemetryClient {
     rootExporter: any SpanExporter,
     childExporter: any SpanExporter
   ) {
+    self.executionNamePrefix = configuration.runEnvironment.executionNamePrefix
+    self.executionNameSuffix = configuration.runEnvironment.executionNameSuffix
     self.logger = logger
     self.jobSpanContext = Self.jobSpanContext(environment: environment)
 
@@ -286,6 +311,7 @@ private final class LiveTelemetryClient {
       environment: environment,
       uploadTags: uploadTags
     )
+    self.childProviderResource = resource
     let rootProcessor = SynchronousExecutionSpanProcessor(exporter: rootExporter, logger: logger)
     self.executionProvider = Self.makeProvider(
       resource: resource,
@@ -304,23 +330,22 @@ private final class LiveTelemetryClient {
       maxExportBatchSize: 512
     )
     let forwarder = ExecutionChildSpanProcessor(processor: childProcessor, registry: self.registry)
-    let globalProvider = OpenTelemetry.instance.tracerProvider
-    if globalProvider is DefaultTracerProvider {
-      let provider = Self.makeProvider(resource: resource, processor: forwarder)
-      OpenTelemetry.registerTracerProvider(tracerProvider: provider)
-      self.childForwarder = forwarder
-    } else if let provider = globalProvider as? TracerProviderSdk {
-      provider.addSpanProcessor(forwarder)
-      self.childForwarder = forwarder
-    } else {
-      logger?.error(
-        "OpenTelemetry child span export is disabled because the existing tracer provider cannot accept a span processor"
-      )
-      self.childForwarder = nil
-    }
+    self.childForwarder = forwarder
+    #if !canImport(os.activity)
+    self.executionContextManager = ExecutionContextManager.shared
+    OpenTelemetry.registerContextManager(contextManager: self.executionContextManager)
+    #endif
+    self.attachChildForwarder()
   }
 
   func startExecution(_ test: TestState) -> UUID {
+    self.attachChildForwarder()
+
+    let qualifiedTestName = [
+      self.executionNamePrefix,
+      "\(test.className).\(test.testName)",
+      self.executionNameSuffix,
+    ].compactMap { $0 }.joined(separator: " ")
     let builder = self.tracer
       .spanBuilder(spanName: TelemetryValue.rootSpanName)
       .setNoParent()
@@ -333,7 +358,7 @@ private final class LiveTelemetryClient {
       )
       .setAttribute(
         key: SemanticConventions.Test.caseName.rawValue,
-        value: "\(test.className).\(test.testName)"
+        value: qualifiedTestName
       )
       .setAttribute(key: SemanticConventions.Test.suiteName.rawValue, value: test.className)
 
@@ -344,7 +369,11 @@ private final class LiveTelemetryClient {
     let span = builder.startSpan()
     self.registry.insert(span.context.traceId)
     self.spans.withValue { $0[test.id] = span }
+    #if canImport(os.activity)
     OpenTelemetry.instance.contextProvider.setActiveSpan(span)
+    #else
+    self.executionContextManager.setExecutionSpan(span)
+    #endif
     return test.id
   }
 
@@ -403,14 +432,50 @@ private final class LiveTelemetryClient {
       }
     }
 
+    #if canImport(os.activity)
     OpenTelemetry.instance.contextProvider.removeContextForSpan(span)
+    #else
+    self.executionContextManager.removeExecutionSpan(span)
+    #endif
     self.registry.remove(span.context.traceId)
     span.end()
   }
 
   func forceFlush() {
     self.executionProvider.forceFlush(timeout: 30)
-    self.childForwarder?.forceFlush(timeout: 30)
+    self.childForwarder.forceFlush(timeout: 30)
+  }
+
+  private func attachChildForwarder() {
+    let globalProvider = OpenTelemetry.instance.tracerProvider
+    if globalProvider is DefaultTracerProvider {
+      let provider = Self.makeProvider(
+        resource: self.childProviderResource,
+        processor: self.childForwarder
+      )
+      self.attachedChildProviders.withValue { $0.append(provider) }
+      OpenTelemetry.registerTracerProvider(tracerProvider: provider)
+    } else if let provider = globalProvider as? TracerProviderSdk {
+      let needsProcessor = self.attachedChildProviders.withValue { providers in
+        guard !providers.contains(where: { $0 === provider }) else { return false }
+        providers.append(provider)
+        return true
+      }
+      if needsProcessor {
+        provider.addSpanProcessor(self.childForwarder)
+      }
+    } else {
+      let shouldReport = self.reportedUnsupportedChildProvider.withValue { reported in
+        guard !reported else { return false }
+        reported = true
+        return true
+      }
+      if shouldReport {
+        self.logger?.error(
+          "OpenTelemetry child span export is disabled because the existing tracer provider cannot accept a span processor"
+        )
+      }
+    }
   }
 
   private static func resultStatus(_ result: TestResult) -> String {
@@ -504,7 +569,9 @@ private final class LiveTelemetryClient {
     for (key, value) in uploadTags {
       set(BuildkiteTelemetryAttribute.tagPrefix + key, value)
     }
-    for (key, value) in run.customEnvironment ?? [:] where Self.validAttributeKey(key) {
+    for (key, value) in run.customEnvironment ?? [:]
+      where !RunEnvironment.customFieldNames.contains(key) && Self.validAttributeKey(key)
+    {
       attributes[key] = AttributeValue(value.base) ?? .string(value.description)
     }
 

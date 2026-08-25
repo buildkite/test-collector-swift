@@ -159,8 +159,7 @@ final class TelemetryClientTests: XCTestCase {
     XCTAssertEqual(span.links.only?.context.spanId.hexString, "00f067aa0ba902b7")
   }
 
-  #if canImport(os.activity)
-  func testExportsSpansCreatedUnderTheActiveExecutionAsChildren() throws {
+  func testExportsSpansFromAReplacementProviderAsExecutionChildren() throws {
     let rootExporter = InMemoryExporter()
     let childExporter = InMemoryExporter()
     let client = try XCTUnwrap(TelemetryClient.live(
@@ -170,6 +169,10 @@ final class TelemetryClientTests: XCTestCase {
       rootExporter: rootExporter,
       childExporter: childExporter
     ))
+    let replacementProvider = TracerProviderBuilder()
+      .with(sampler: Samplers.alwaysOn)
+      .build()
+    OpenTelemetry.registerTracerProvider(tracerProvider: replacementProvider)
     var test = TestState(id: UUID(), className: "ChildTests", testName: "testChild")
 
     let executionID = client.startExecution(test)
@@ -187,9 +190,8 @@ final class TelemetryClientTests: XCTestCase {
     XCTAssertEqual(exportedChild.traceId, root.traceId)
     XCTAssertEqual(exportedChild.parentSpanId, root.spanId)
   }
-  #endif
 
-  func testUsesStandardTraceEndpointAndHeadersOverCollectorToken() throws {
+  func testUsesOnlyConfiguredHeadersForStandardTraceEndpoint() throws {
     let configuration = try XCTUnwrap(CollectorOTLPConfiguration(
       environment: EnvironmentValues(
         values: [
@@ -205,9 +207,66 @@ final class TelemetryClientTests: XCTestCase {
     ))
 
     XCTAssertEqual(configuration.endpoint.absoluteString, "http://127.0.0.1:1234/v1/traces")
-    XCTAssertEqual(configuration.header(named: "Buildkite-Tests-Run-Key"), "run-key")
+    XCTAssertNil(configuration.header(named: "Buildkite-Tests-Run-Key"))
     XCTAssertEqual(configuration.header(named: "Authorization"), "Bearer relay-token")
     XCTAssertEqual(configuration.header(named: "x-test"), "value/one")
+  }
+
+  func testUsesCollectorCredentialsForTrustedEndpointAndCustomRunKey() throws {
+    let configuration = try XCTUnwrap(CollectorOTLPConfiguration(
+      environment: EnvironmentValues(
+        values: [
+          "BUILDKITE_ANALYTICS_KEY": "original-run-key",
+          "BUILDKITE_ANALYTICS_TOKEN": "collector-token",
+          "BUILDKITE_ANALYTICS_OTLP_ENDPOINT": "http://127.0.0.1:1234/v1/traces",
+          "BUILDKITE_ANALYTICS_ENVIRONMENT": #"{"key":"custom-run-key"}"#,
+        ],
+        getFromEnvironment: { _ in nil },
+        getFromInfoDictionary: { _ in nil }
+      ),
+      logger: nil
+    ))
+
+    XCTAssertEqual(configuration.header(named: "Buildkite-Tests-Run-Key"), "custom-run-key")
+    XCTAssertEqual(
+      configuration.header(named: "Authorization"),
+      #"Token token="collector-token""#
+    )
+  }
+
+  func testAppliesExecutionNameAffixesAndCustomRunEnvironmentOverrides() throws {
+    let rootExporter = InMemoryExporter()
+    let client = try XCTUnwrap(TelemetryClient.live(
+      environment: EnvironmentValues(
+        values: [
+          "BUILDKITE_ANALYTICS_KEY": "original-run-key",
+          "BUILDKITE_ANALYTICS_TOKEN": "collector-token",
+          "BUILDKITE_ANALYTICS_BRANCH": "original-branch",
+          "BUILDKITE_ANALYTICS_EXECUTION_NAME_PREFIX": "[ios]",
+          "BUILDKITE_ANALYTICS_EXECUTION_NAME_SUFFIX": "[debug]",
+          "BUILDKITE_ANALYTICS_ENVIRONMENT": #"{"key":"custom-run-key","branch":"custom-branch","custom.flag":true}"#,
+        ],
+        getFromEnvironment: { _ in nil },
+        getFromInfoDictionary: { _ in nil }
+      ),
+      uploadTags: [:],
+      logger: nil,
+      rootExporter: rootExporter,
+      childExporter: InMemoryExporter()
+    ))
+    var test = TestState(id: UUID(), className: "PaymentTests", testName: "testChargeCard")
+
+    let executionID = client.startExecution(test)
+    test.result = .passed
+    client.finishExecution(executionID, test: test, tags: nil)
+
+    let span = try XCTUnwrap(rootExporter.getFinishedSpanItems().only)
+    XCTAssertEqual(span.attributes["test.case.name"], .string("[ios] PaymentTests.testChargeCard [debug]"))
+    XCTAssertEqual(span.resource.attributes[BuildkiteTelemetryAttribute.runKey], .string("custom-run-key"))
+    XCTAssertEqual(span.resource.attributes["vcs.ref.head.name"], .string("custom-branch"))
+    XCTAssertEqual(span.resource.attributes["custom.flag"], .bool(true))
+    XCTAssertNil(span.resource.attributes["key"])
+    XCTAssertNil(span.resource.attributes["branch"])
   }
 
   func testRetriesFailedExecutionWithTheNextExecution() throws {
