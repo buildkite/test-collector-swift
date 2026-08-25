@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## Unreleased (targeting 2.0.0-beta.1)
 
-- Submit XCTest executions as OpenTelemetry root spans instead of proprietary JSON uploads
+- Replace proprietary execution uploads with XCTest execution root spans submitted through OpenTelemetry
 - Export run and execution tags as `buildkite.tag.*` attributes
 - Support standard OTLP/HTTP exporter configuration and child-span forwarding
 - Require Swift 5.10 and macOS 12 or newer

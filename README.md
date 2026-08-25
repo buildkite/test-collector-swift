@@ -1,4 +1,4 @@
-# Buildkite Test Collector for Swift (Beta)
+# Buildkite Test Collector for Swift
 
 Official [Buildkite Test Engine](https://buildkite.com/platform/test-engine/) collector for Swift test frameworks ✨
 
@@ -13,6 +13,11 @@ collector does not use the legacy proprietary execution upload API.
 
 The collector requires Swift 5.10 or newer. Its macOS deployment target is macOS
 12 or newer.
+
+> [!NOTE]
+> The OpenTelemetry-based collector on this branch is being prepared for
+> `2.0.0-beta.1` and has not been released. The installation example below
+> continues to reference the latest released version, `0.6.0`.
 
 ## 👉 Installing
 
