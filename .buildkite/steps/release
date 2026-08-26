@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+# Extract test-collector-swift from bktest and mirror a prefixed release tag
+# as a plain vX.Y.Z tag in buildkite/test-collector-swift. The standalone
+# repository remains the SwiftPM distribution URL; only its tags are updated.
+
+set -euo pipefail
+
+PROJECT="test-collector-swift"
+REMOTE_URL="https://github.com/buildkite/test-collector-swift.git"
+SECRET_NAME="TEST_COLLECTOR_SWIFT_GITHUB_TOKEN"
+TAG_PATTERN="^${PROJECT}/v([0-9]+\.[0-9]+\.[0-9]+)$"
+BOOTSTRAP_TAG="v0.6.0"
+
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+# The Docker plugin mounts an agent-owned checkout into a root-owned
+# container. Trust this known checkout only when Git requires it.
+if ! SOURCE_COMMIT="$(git -C "${ROOT}" rev-parse HEAD 2>/dev/null)"; then
+  git config --global --add safe.directory "${ROOT}"
+  SOURCE_COMMIT="$(git -C "${ROOT}" rev-parse HEAD)"
+fi
+
+if [ -n "${BUILDKITE_TAG:-}" ]; then
+  if [[ ! "${BUILDKITE_TAG}" =~ ${TAG_PATTERN} ]]; then
+    echo "BUILDKITE_TAG '${BUILDKITE_TAG}' does not match ${PROJECT}/vX.Y.Z; refusing" >&2
+    exit 1
+  fi
+  VERSION="${BASH_REMATCH[1]}"
+  RELEASE_TAG="v${VERSION}"
+  TAG_COMMIT="$(git -C "${ROOT}" rev-parse --verify "refs/tags/${BUILDKITE_TAG}^{commit}")"
+  if [ "${TAG_COMMIT}" != "${SOURCE_COMMIT}" ]; then
+    echo "checkout ${SOURCE_COMMIT} is not tagged by ${BUILDKITE_TAG} (${TAG_COMMIT}); refusing" >&2
+    exit 1
+  fi
+  echo "--- Extracting ${PROJECT} for ${BUILDKITE_TAG}"
+else
+  RELEASE_TAG=""
+  echo "--- Extracting ${PROJECT} at ${SOURCE_COMMIT} for a release rehearsal"
+fi
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "${TMP}"' EXIT
+MIRROR="${TMP}/mirror"
+
+echo "--- Installing git-filter-repo"
+python3 -m venv "${TMP}/venv"
+"${TMP}/venv/bin/pip" install --quiet --disable-pip-version-check git-filter-repo==2.47.0
+export PATH="${TMP}/venv/bin:${PATH}"
+
+# Build a fresh temporary repository from the checked-out commit and all
+# Swift release tags. Fetching from the local checkout avoids relying on
+# network credentials for the source repository.
+git init --quiet "${MIRROR}"
+git -C "${MIRROR}" fetch --quiet --no-tags "${ROOT}" HEAD
+git -C "${MIRROR}" update-ref refs/heads/release-source FETCH_HEAD
+git -C "${MIRROR}" symbolic-ref HEAD refs/heads/release-source
+git -C "${MIRROR}" fetch --quiet --no-tags "${ROOT}" \
+  "+refs/tags/${PROJECT}/*:refs/tags/${PROJECT}/*"
+
+git -C "${MIRROR}" filter-repo --force \
+  --subdirectory-filter "${PROJECT}" \
+  --tag-rename "${PROJECT}/":""
+
+if [ -n "${RELEASE_TAG}" ]; then
+  CANDIDATE="refs/tags/${RELEASE_TAG}^{commit}"
+else
+  CANDIDATE="refs/heads/release-source"
+fi
+git -C "${MIRROR}" cat-file -e "${CANDIDATE}:Package.swift"
+
+echo "--- Checking the standalone release mirror (read-only)"
+git -C "${MIRROR}" remote add release "${REMOTE_URL}"
+git -C "${MIRROR}" fetch --quiet --force --no-tags release \
+  "+refs/tags/v*:refs/tags/release/v*"
+
+LATEST_REMOTE_TAG="$(
+  git -C "${MIRROR}" for-each-ref --format='%(refname:strip=3)' refs/tags/release/ |
+    grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' |
+    sort -V |
+    tail -n 1
+)"
+if [ -z "${LATEST_REMOTE_TAG}" ]; then
+  echo "no stable release tags found in ${REMOTE_URL}; refusing" >&2
+  exit 1
+fi
+echo "latest standalone release is ${LATEST_REMOTE_TAG}"
+
+if [ -n "${RELEASE_TAG}" ]; then
+  if git -C "${MIRROR}" show-ref --verify --quiet "refs/tags/release/${RELEASE_TAG}"; then
+    echo "${RELEASE_TAG} already exists in ${REMOTE_URL}; refusing to replace it" >&2
+    exit 1
+  fi
+  HIGHEST_TAG="$(printf '%s\n%s\n' "${LATEST_REMOTE_TAG}" "${RELEASE_TAG}" | sort -V | tail -n 1)"
+  if [ "${HIGHEST_TAG}" != "${RELEASE_TAG}" ] || [ "${LATEST_REMOTE_TAG}" = "${RELEASE_TAG}" ]; then
+    echo "release ${RELEASE_TAG} must be newer than ${LATEST_REMOTE_TAG}; refusing" >&2
+    exit 1
+  fi
+fi
+
+LATEST_REMOTE_REF="refs/tags/release/${LATEST_REMOTE_TAG}^{commit}"
+if git -C "${MIRROR}" merge-base --is-ancestor "${LATEST_REMOTE_REF}" "${CANDIDATE}"; then
+  echo "extracted history descends from mirrored ${LATEST_REMOTE_TAG}"
+else
+  # The original repository's commits and bktest's imported commits diverge
+  # when ctg qualified bare issue/PR references in commit messages. The
+  # first mirrored release therefore cannot descend from the original
+  # v0.6.0 commit. Permit that one known boundary only after proving the
+  # extracted and original v0.6.0 trees are identical, and that the new
+  # candidate descends from the extracted side of the boundary. Every
+  # subsequent mirrored release follows the normal ancestry check above.
+  if [ "${LATEST_REMOTE_TAG}" != "${BOOTSTRAP_TAG}" ]; then
+    echo "extracted history does not descend from mirrored ${LATEST_REMOTE_TAG}; refusing" >&2
+    exit 1
+  fi
+  EXTRACTED_BOOTSTRAP_REF="refs/tags/${BOOTSTRAP_TAG}^{commit}"
+  REMOTE_BOOTSTRAP_TREE="$(git -C "${MIRROR}" rev-parse "${LATEST_REMOTE_REF}^{tree}")"
+  EXTRACTED_BOOTSTRAP_TREE="$(git -C "${MIRROR}" rev-parse "${EXTRACTED_BOOTSTRAP_REF}^{tree}")"
+  if [ "${REMOTE_BOOTSTRAP_TREE}" != "${EXTRACTED_BOOTSTRAP_TREE}" ]; then
+    echo "original and extracted ${BOOTSTRAP_TAG} trees differ; refusing bootstrap" >&2
+    exit 1
+  fi
+  if ! git -C "${MIRROR}" merge-base --is-ancestor "${EXTRACTED_BOOTSTRAP_REF}" "${CANDIDATE}"; then
+    echo "candidate does not descend from extracted ${BOOTSTRAP_TAG}; refusing bootstrap" >&2
+    exit 1
+  fi
+  echo "verified the one-time ${BOOTSTRAP_TAG} history boundary by identical trees"
+fi
+
+if [ "${RELEASE_EXECUTE:-}" != "true" ]; then
+  echo "--- Rehearsal only"
+  echo "RELEASE_EXECUTE is not 'true': stopping before pushing a release tag."
+  exit 0
+fi
+
+echo "--- Publishing ${RELEASE_TAG} to the standalone release mirror"
+if [ -z "${RELEASE_TAG}" ]; then
+  echo "RELEASE_EXECUTE=true without a ${PROJECT}/vX.Y.Z tag; refusing" >&2
+  exit 1
+fi
+if ! GITHUB_TOKEN="$(buildkite-agent secret get "${SECRET_NAME}")"; then
+  echo "could not read Buildkite secret ${SECRET_NAME}" >&2
+  exit 1
+fi
+if [ -z "${GITHUB_TOKEN}" ]; then
+  echo "Buildkite secret ${SECRET_NAME} is empty" >&2
+  exit 1
+fi
+export GITHUB_TOKEN
+
+ASKPASS="${TMP}/git-askpass"
+cat > "${ASKPASS}" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  *Username*) printf '%s\n' 'x-access-token' ;;
+  *Password*) printf '%s\n' "${GITHUB_TOKEN}" ;;
+esac
+EOF
+chmod 700 "${ASKPASS}"
+
+GIT_ASKPASS="${ASKPASS}" GIT_TERMINAL_PROMPT=0 \
+  git -C "${MIRROR}" push release \
+    "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"

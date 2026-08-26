@@ -158,7 +158,7 @@ The library uses the presence/absence of certain environment variables to determ
 
 ## 🔜 Roadmap
 
-See the [GitHub 'enhancement' issues](https://github.com/buildkite/test-collector-swift/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) for planned features. Pull requests are always welcome, and we’ll give you feedback and guidance if you choose to contribute 💚
+See the [GitHub 'enhancement' issues](https://github.com/buildkite/bktest/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) for planned features. Pull requests are always welcome, and we’ll give you feedback and guidance if you choose to contribute 💚
 
 ## 👩‍💻 Contributing
 
@@ -166,10 +166,10 @@ Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTIN
 
 ## 🚀 Releasing
 
-New releases are currently paused. See the monorepo's
-[collector release guide](../RELEASING.md#swift-swift-package-manager) for
-the distribution constraint and current status.
+Releases are generated from the monorepo and mirrored to the standalone
+SwiftPM repository. See the monorepo's
+[collector release guide](https://github.com/buildkite/bktest/blob/main/RELEASING.md#swift-swift-package-manager).
 
 ## 📜 License
 
-The package is available as open source under the terms of the [MIT License](https://github.com/buildkite/test-collector-swift/blob/main/LICENSE).
+The package is available as open source under the terms of the [MIT License](https://github.com/buildkite/bktest/blob/main/test-collector-swift/LICENSE).

@@ -1,0 +1,56 @@
+# Monorepo release pipeline for test-collector-swift, uploaded by the
+# release dispatcher (.buildkite/pipeline.release.yml) running on the
+# separate bktest-release Buildkite pipeline. Rehearsals extract the Swift
+# history and verify its relationship to the standalone release mirror;
+# release builds push a plain vX.Y.Z tag for SwiftPM consumers.
+#
+# Safety model:
+#   - The rehearsal step is read-only. It sees BUILDKITE_TAG but never
+#     RELEASE_EXECUTE or the push credential.
+#   - The push credential is a fine-grained GitHub token stored as a
+#     Buildkite secret whose access policy is pinned to bktest-release.
+#   - The publish step exists only on an exact test-collector-swift/vX.Y.Z
+#     tag with RELEASE_EXECUTE=true, behind a block step. The release script
+#     independently re-checks both conditions before pushing.
+
+agents:
+  queue: hosted
+
+steps:
+  - label: ":swift: test-collector-swift: extract + rehearse release mirror"
+    key: swift-build
+    command: test-collector-swift/.buildkite/steps/release
+    plugins:
+      - docker#v5.12.0:
+          image: "python:3.13"
+          environment:
+            - BUILDKITE_TAG
+
+  - label: ":github: test-collector-swift: verify release mirror credential"
+    key: swift-credentials
+    command: |
+      if buildkite-agent secret get TEST_COLLECTOR_SWIFT_GITHUB_TOKEN > /dev/null 2>&1; then
+        echo "ok: release mirror token is readable"
+      else
+        echo "TEST_COLLECTOR_SWIFT_GITHUB_TOKEN is not available to bktest-release yet"
+        exit 1
+      fi
+    soft_fail: true
+
+  - block: ":rocket: Mirror test-collector-swift release tag?"
+    key: swift-confirm
+    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+$/ && build.env("RELEASE_EXECUTE") == "true"
+
+  - label: ":github: test-collector-swift: push release mirror tag"
+    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+$/ && build.env("RELEASE_EXECUTE") == "true"
+    depends_on:
+      - swift-build
+      - swift-confirm
+    command: test-collector-swift/.buildkite/steps/release
+    plugins:
+      - docker#v5.12.0:
+          image: "python:3.13"
+          mount-buildkite-agent: true
+          environment:
+            - BUILDKITE_TAG
+            - RELEASE_EXECUTE
