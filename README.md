@@ -1,10 +1,12 @@
-# This repository has moved
+# SwiftPM release mirror
 
-Development of this project continues in the
-[buildkite/bktest](https://github.com/buildkite/bktest) monorepo: it now lives at
-[`test-collector-swift/`](https://github.com/buildkite/bktest/tree/main/test-collector-swift), with full git
-history carried over.
+This repository is the generated release mirror for Swift Package Manager.
+Existing consumers keep using this repository and its plain `vX.Y.Z` tags;
+new tags are generated at release time from
+[`test-collector-swift/`](https://github.com/buildkite/bktest/tree/main/test-collector-swift)
+in the [buildkite/bktest](https://github.com/buildkite/bktest) monorepo.
 
-- Code, issues, and pull requests: https://github.com/buildkite/bktest
-- This repository is archived: its history remains browsable, so historic
-  commit SHAs and issue/PR links keep resolving.
+Development, issues, and pull requests all happen in
+[buildkite/bktest](https://github.com/buildkite/bktest). This default branch
+remains a pointer; only release tags are machine-written here. Historic tags,
+commits, issues, and pull requests remain browsable.
