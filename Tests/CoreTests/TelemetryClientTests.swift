@@ -212,6 +212,54 @@ final class TelemetryClientTests: XCTestCase {
     XCTAssertEqual(configuration.header(named: "x-test"), "value/one")
   }
 
+  func testHeadersAloneDoNotEnableCollector() {
+    let configuration = CollectorOTLPConfiguration(
+      environment: EnvironmentValues(
+        values: [
+          "OTEL_EXPORTER_OTLP_HEADERS": "authorization=Bearer%20unrelated-token",
+        ],
+        getFromEnvironment: { _ in nil },
+        getFromInfoDictionary: { _ in nil }
+      ),
+      logger: nil
+    )
+
+    XCTAssertNil(configuration)
+  }
+
+  func testIgnoresStandardHeadersForTrustedEndpoint() throws {
+    let messages = LockIsolated([String]())
+    let logger = Logger(printer: { message in
+      messages.withValue { $0.append(message) }
+    })
+    let configuration = try XCTUnwrap(CollectorOTLPConfiguration(
+      environment: EnvironmentValues(
+        values: [
+          "BUILDKITE_ANALYTICS_KEY": "run-key",
+          "BUILDKITE_ANALYTICS_TOKEN": "collector-token",
+          "OTEL_EXPORTER_OTLP_TRACES_HEADERS": "authorization=Bearer%20unrelated-token,x-test=value",
+        ],
+        getFromEnvironment: { _ in nil },
+        getFromInfoDictionary: { _ in nil }
+      ),
+      logger: logger
+    ))
+    logger.waitForLogs()
+
+    XCTAssertEqual(configuration.endpoint.absoluteString, TestCollector.endpoint)
+    XCTAssertEqual(configuration.header(named: "Buildkite-Tests-Run-Key"), "run-key")
+    XCTAssertEqual(
+      configuration.header(named: "Authorization"),
+      #"Token token="collector-token""#
+    )
+    XCTAssertNil(configuration.header(named: "x-test"))
+    XCTAssertTrue(messages.withValue { messages in
+      messages.contains(
+        "[BuildkiteTestCollector] warning: Standard OpenTelemetry exporter headers are ignored for endpoints that receive Buildkite credentials; use OTEL_EXPORTER_OTLP_TRACES_ENDPOINT or OTEL_EXPORTER_OTLP_ENDPOINT to send custom headers."
+      )
+    })
+  }
+
   func testUsesCollectorCredentialsForTrustedEndpointAndCustomRunKey() throws {
     let configuration = try XCTUnwrap(CollectorOTLPConfiguration(
       environment: EnvironmentValues(

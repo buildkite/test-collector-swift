@@ -53,10 +53,12 @@ struct CollectorOTLPConfiguration {
     var runEnvironment = environment.runEnvironment()
     runEnvironment.applyCustomEnvironmentOverrides()
     let rawHeaders = environment.otelTracesHeaders ?? environment.otelHeaders
+    // Standard headers alone must not enable collection or select the OTLP
+    // specification's localhost default. They may be process-wide settings for
+    // unrelated telemetry and are safe to use only with an explicit standard endpoint.
     let hasExplicitConfiguration = environment.otelTracesEndpoint != nil
       || environment.otelEndpoint != nil
       || environment.analyticsOTLPEndpoint != nil
-      || rawHeaders != nil
 
     guard environment.analyticsToken != nil || hasExplicitConfiguration else { return nil }
 
@@ -102,17 +104,17 @@ struct CollectorOTLPConfiguration {
       if let token = environment.analyticsToken {
         headers.append(("Authorization", "Token token=\"\(token)\""))
       }
-    }
-
-    if let rawHeaders {
+      if rawHeaders != nil {
+        logger?.warning(
+          "Standard OpenTelemetry exporter headers are ignored for endpoints that receive Buildkite credentials; use OTEL_EXPORTER_OTLP_TRACES_ENDPOINT or OTEL_EXPORTER_OTLP_ENDPOINT to send custom headers."
+        )
+      }
+    } else if let rawHeaders {
       guard let parsedHeaders = Self.parseHeaders(rawHeaders) else {
         logger?.error("OpenTelemetry exporter headers are invalid")
         return nil
       }
-      for header in parsedHeaders {
-        headers.removeAll { $0.0.caseInsensitiveCompare(header.0) == .orderedSame }
-        headers.append(header)
-      }
+      headers = parsedHeaders
     }
 
     self.endpoint = endpoint

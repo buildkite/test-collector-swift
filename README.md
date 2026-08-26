@@ -69,10 +69,14 @@ export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL="http/protobuf"
 The signal-specific variables take precedence over
 `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, and
 `OTEL_EXPORTER_OTLP_PROTOCOL`. A generic OTLP endpoint has `/v1/traces`
-appended. Standard endpoints receive only the explicitly configured OTLP
-headers; the collector does not send the Buildkite suite token to them.
+appended. Standard header variables are applied only when a standard endpoint
+is explicitly configured; headers alone do not enable the collector or select
+an endpoint. Standard endpoints receive only the explicitly configured OTLP
+headers, and the collector does not send the Buildkite suite token to them.
 `BUILDKITE_ANALYTICS_OTLP_ENDPOINT` remains available as a trusted,
-collector-specific endpoint override that receives the suite token and run key.
+collector-specific endpoint override that receives only the suite token and run
+key. To send custom headers to a relay, configure it through the standard
+endpoint and header variables instead.
 
 ### Step 3
 
@@ -84,8 +88,9 @@ key:
 value:
 `$(BUILDKITE_ANALYTICS_TOKEN)`
 
-If you configure an OTLP endpoint, headers, or protocol, map those
-`OTEL_EXPORTER_OTLP_TRACES_*` variables into the test runner in the same way.
+If you configure a standard OTLP endpoint, map that endpoint and its associated
+`OTEL_EXPORTER_OTLP_TRACES_*` header or protocol variables into the test runner
+in the same way.
 
 The same key value pair can be specified in your main bundle's `info.plist` file if you would rather specify it there. Note variables in the environment take precedent over those in the `info.plist` file.
 
