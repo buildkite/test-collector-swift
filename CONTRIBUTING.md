@@ -16,7 +16,8 @@ If the above doesn't help, please [submit an issue][new-issue] via GitHub.
 
 - Click the [Fork][fork-repo] button in the upper right corner of the repository.
 - Clone your fork:
-    `git clone git@github.com:<YOUR_GITHUB_USER>/test-collector-swift.git`
+    `git clone git@github.com:<YOUR_GITHUB_USER>/bktest.git`
+- Change to the Swift collector directory: `cd bktest/test-collector-swift`.
 - See the [GitHub documentation][fork-docs] about managing your fork.
 
 ### Recommended
@@ -43,9 +44,9 @@ Once a Code Owner has reviewed your PR, you might need to make changes before it
 
 When you are done addressing your review, make sure you alert the reviewer in a comment or via GitHub's re-request review command. See [GitHub's documentation for dealing with Pull Requests][pr-docs].
 
-After your contribution is merged, users can access it by pointing to the main
-branch. New tagged releases are currently paused; see the monorepo's
-[collector release guide](../RELEASING.md#swift-swift-package-manager).
+After your contribution is merged, it is included in the next generated
+release tag in the standalone SwiftPM mirror. See the monorepo's
+[collector release guide][release-guide].
 
 ## 🤝 Code of Conduct
 
@@ -65,11 +66,12 @@ All contributions to this project are also under this license as per [GitHub's T
 [code-of-conduct]: CODE_OF_CONDUCT.md
 [commit-messages]: https://chris.beams.io/posts/git-commit
 [fork-docs]: https://help.github.com/articles/working-with-forks
-[fork-repo]: https://github.com/buildkite/test-collector-swift/fork
+[fork-repo]: https://github.com/buildkite/bktest/fork
 [github-terms-contribution]: https://help.github.com/en/github/site-policy/github-terms-of-service#6-contributions-under-repository-license
-[issues]: https://github.com/buildkite/test-collector-swift/issues
+[issues]: https://github.com/buildkite/bktest/issues
 [license]: LICENSE
-[new-issue]: https://github.com/buildkite/test-collector-swift/issues/new/choose
+[new-issue]: https://github.com/buildkite/bktest/issues/new/choose
 [pr-docs]: https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/requesting-a-pull-request-review
 [pr-template]: .github/PULL_REQUEST_TEMPLATE.md
 [readme]: README.md
+[release-guide]: https://github.com/buildkite/bktest/blob/main/RELEASING.md#swift-swift-package-manager
