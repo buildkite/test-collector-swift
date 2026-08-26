@@ -227,7 +227,7 @@ final class TelemetryClientTests: XCTestCase {
     XCTAssertNil(configuration)
   }
 
-  func testIgnoresStandardHeadersForTrustedEndpoint() throws {
+  func testIgnoresStandardHeadersAndProtocolForTrustedEndpoint() throws {
     let messages = LockIsolated([String]())
     let logger = Logger(printer: { message in
       messages.withValue { $0.append(message) }
@@ -238,6 +238,7 @@ final class TelemetryClientTests: XCTestCase {
           "BUILDKITE_ANALYTICS_KEY": "run-key",
           "BUILDKITE_ANALYTICS_TOKEN": "collector-token",
           "OTEL_EXPORTER_OTLP_TRACES_HEADERS": "authorization=Bearer%20unrelated-token,x-test=value",
+          "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
         ],
         getFromEnvironment: { _ in nil },
         getFromInfoDictionary: { _ in nil }

@@ -5,7 +5,7 @@
 - Replace proprietary execution uploads with XCTest execution root spans submitted through OpenTelemetry
 - Export run and execution tags as `buildkite.tag.*` attributes
 - Support standard OTLP/HTTP exporter configuration and child-span forwarding
-- Keep standard OTLP headers isolated from trusted Buildkite endpoints
+- Apply standard OTLP headers and protocols only with standard endpoints
 - Warn when the unsupported `BUILDKITE_ANALYTICS_BASE_URL` setting is ignored
 - Back off failed root-span exports instead of blocking every subsequent test
 - Require Swift 5.10 and macOS 12 or newer

@@ -62,14 +62,6 @@ struct CollectorOTLPConfiguration {
 
     guard environment.analyticsToken != nil || hasExplicitConfiguration else { return nil }
 
-    if let protocolName = environment.otelTracesProtocol ?? environment.otelProtocol,
-       protocolName.lowercased() != "http/protobuf" {
-      logger?.error(
-        "Unsupported OpenTelemetry traces protocol \(protocolName); expected http/protobuf"
-      )
-      return nil
-    }
-
     let endpoint: URL
     let usesBuildkiteCredentials: Bool
     if let value = environment.otelTracesEndpoint {
@@ -96,6 +88,15 @@ struct CollectorOTLPConfiguration {
     } else {
       endpoint = URL(string: TestCollector.endpoint)!
       usesBuildkiteCredentials = true
+    }
+
+    if !usesBuildkiteCredentials,
+       let protocolName = environment.otelTracesProtocol ?? environment.otelProtocol,
+       protocolName.lowercased() != "http/protobuf" {
+      logger?.error(
+        "Unsupported OpenTelemetry traces protocol \(protocolName); expected http/protobuf"
+      )
+      return nil
     }
 
     var headers = [(String, String)]()
