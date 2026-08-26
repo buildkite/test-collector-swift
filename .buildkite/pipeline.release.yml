@@ -7,8 +7,8 @@
 # Safety model:
 #   - The rehearsal step is read-only. It sees BUILDKITE_TAG but never
 #     RELEASE_EXECUTE or the push credential.
-#   - The push credential is a fine-grained GitHub token stored as a
-#     Buildkite secret whose access policy is pinned to bktest-release.
+#   - The push credential is a repository-specific SSH deploy key stored as
+#     a Buildkite secret whose access policy is pinned to bktest-release.
 #   - The publish step exists only on an exact test-collector-swift/vX.Y.Z
 #     tag with RELEASE_EXECUTE=true, behind a block step. The release script
 #     independently re-checks both conditions before pushing.
@@ -29,10 +29,10 @@ steps:
   - label: ":github: test-collector-swift: verify release mirror credential"
     key: swift-credentials
     command: |
-      if buildkite-agent secret get TEST_COLLECTOR_SWIFT_GITHUB_TOKEN > /dev/null 2>&1; then
-        echo "ok: release mirror token is readable"
+      if buildkite-agent secret get TEST_COLLECTOR_SWIFT_DEPLOY_KEY > /dev/null 2>&1; then
+        echo "ok: release mirror deploy key is readable"
       else
-        echo "TEST_COLLECTOR_SWIFT_GITHUB_TOKEN is not available to bktest-release yet"
+        echo "TEST_COLLECTOR_SWIFT_DEPLOY_KEY is not available to bktest-release yet"
         exit 1
       fi
     soft_fail: true

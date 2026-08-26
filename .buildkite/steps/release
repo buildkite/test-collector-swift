@@ -7,7 +7,8 @@ set -euo pipefail
 
 PROJECT="test-collector-swift"
 REMOTE_URL="https://github.com/buildkite/test-collector-swift.git"
-SECRET_NAME="TEST_COLLECTOR_SWIFT_GITHUB_TOKEN"
+PUSH_URL="git@github.com:buildkite/test-collector-swift.git"
+SECRET_NAME="TEST_COLLECTOR_SWIFT_DEPLOY_KEY"
 TAG_PATTERN="^${PROJECT}/v([0-9]+\.[0-9]+\.[0-9]+)$"
 BOOTSTRAP_TAG="v0.6.0"
 
@@ -136,26 +137,33 @@ if [ -z "${RELEASE_TAG}" ]; then
   echo "RELEASE_EXECUTE=true without a ${PROJECT}/vX.Y.Z tag; refusing" >&2
   exit 1
 fi
-if ! GITHUB_TOKEN="$(buildkite-agent secret get "${SECRET_NAME}")"; then
+if ! DEPLOY_KEY="$(buildkite-agent secret get "${SECRET_NAME}")"; then
   echo "could not read Buildkite secret ${SECRET_NAME}" >&2
   exit 1
 fi
-if [ -z "${GITHUB_TOKEN}" ]; then
+if [ -z "${DEPLOY_KEY}" ]; then
   echo "Buildkite secret ${SECRET_NAME} is empty" >&2
   exit 1
 fi
-export GITHUB_TOKEN
 
-ASKPASS="${TMP}/git-askpass"
-cat > "${ASKPASS}" <<'EOF'
-#!/usr/bin/env bash
-case "$1" in
-  *Username*) printf '%s\n' 'x-access-token' ;;
-  *Password*) printf '%s\n' "${GITHUB_TOKEN}" ;;
-esac
+SSH_KEY="${TMP}/deploy-key"
+KNOWN_HOSTS="${TMP}/known-hosts"
+printf '%s\n' "${DEPLOY_KEY}" > "${SSH_KEY}"
+unset DEPLOY_KEY
+chmod 600 "${SSH_KEY}"
+
+# GitHub's published Ed25519 host key:
+# https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
+cat > "${KNOWN_HOSTS}" <<'EOF'
+github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
 EOF
-chmod 700 "${ASKPASS}"
+chmod 600 "${KNOWN_HOSTS}"
 
-GIT_ASKPASS="${ASKPASS}" GIT_TERMINAL_PROMPT=0 \
-  git -C "${MIRROR}" push release \
+if ! ssh-keygen -y -f "${SSH_KEY}" > /dev/null; then
+  echo "Buildkite secret ${SECRET_NAME} is not a valid SSH private key" >&2
+  exit 1
+fi
+
+GIT_SSH_COMMAND="ssh -F /dev/null -i ${SSH_KEY} -o BatchMode=yes -o IdentitiesOnly=yes -o UserKnownHostsFile=${KNOWN_HOSTS} -o StrictHostKeyChecking=yes" \
+  git -C "${MIRROR}" push "${PUSH_URL}" \
     "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
