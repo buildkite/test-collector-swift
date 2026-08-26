@@ -3,10 +3,8 @@
 # ctg repo's overlay/ directory during the dry-run era; post-cutover this
 # file is maintained here, in the monorepo.
 #
-# This SHADOWS the source repo's own .buildkite/pipeline.yml, which targets
-# a macOS agent queue (Xcode) that the dry-run target has no agents for.
-# Dry-run-safe: pure test/build steps derived from the source repo's Linux
-# CI (GitHub Actions: swift test + swift build in a swift container).
+# Dry-run-safe: credential-free test/build steps derived from the source
+# repo's Linux and macOS CI.
 #
 # Jobs check out the monorepo root, so commands cd into this project.
 
@@ -26,3 +24,18 @@ steps:
               image: "swift:{{matrix}}"
         matrix:
           - "5.9.2"
+
+      - label: ":swift: Tests (macOS, {{matrix}})"
+        agents:
+          queue: "{{matrix}}"
+        command:
+          - "cd test-collector-swift"
+          - "sw_vers"
+          - "xcodebuild -version"
+          - "swift --version"
+          - "swift test --parallel"
+          - "swift build --configuration release"
+        matrix:
+          - "swift-macos-14-xcode-15-4"
+          - "swift-macos-15-xcode-16-4"
+          - "swift-macos-15-xcode-26-2"
