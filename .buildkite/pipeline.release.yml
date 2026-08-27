@@ -5,13 +5,13 @@
 # release builds push a plain vX.Y.Z tag for SwiftPM consumers.
 #
 # Safety model:
-#   - The rehearsal step is read-only. It sees BUILDKITE_TAG but never
-#     RELEASE_EXECUTE or the push credential.
+#   - The rehearsal step is read-only and does not receive the push
+#     credential.
 #   - The push credential is a repository-specific SSH deploy key stored as
 #     a Buildkite secret whose access policy is pinned to bktest-release.
 #   - The publish step exists only on an exact test-collector-swift/vX.Y.Z
-#     tag with RELEASE_EXECUTE=true, behind a block step. The release script
-#     independently re-checks both conditions before pushing.
+#     tag, behind a block step. The release script independently re-checks
+#     the tag before pushing.
 
 agents:
   queue: hosted
@@ -39,10 +39,10 @@ steps:
 
   - block: ":rocket: Mirror test-collector-swift release tag?"
     key: swift-confirm
-    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+$/ && build.env("RELEASE_EXECUTE") == "true"
+    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+$/
 
   - label: ":github: test-collector-swift: push release mirror tag"
-    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+$/ && build.env("RELEASE_EXECUTE") == "true"
+    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+$/
     depends_on:
       - swift-build
       - swift-confirm
@@ -53,4 +53,3 @@ steps:
           mount-buildkite-agent: true
           environment:
             - BUILDKITE_TAG
-            - RELEASE_EXECUTE
