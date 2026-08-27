@@ -126,15 +126,15 @@ else
   echo "verified the one-time ${BOOTSTRAP_TAG} history boundary by identical trees"
 fi
 
-if [ "${RELEASE_EXECUTE:-}" != "true" ]; then
+if [ "${RELEASE_PUBLISH:-}" != "true" ]; then
   echo "--- Rehearsal only"
-  echo "RELEASE_EXECUTE is not 'true': stopping before pushing a release tag."
+  echo "RELEASE_PUBLISH is not 'true': stopping before pushing to the release mirror."
   exit 0
 fi
 
 echo "--- Publishing ${RELEASE_TAG} to the standalone release mirror"
 if [ -z "${RELEASE_TAG}" ]; then
-  echo "RELEASE_EXECUTE=true without a ${PROJECT}/vX.Y.Z tag; refusing" >&2
+  echo "RELEASE_PUBLISH=true without a ${PROJECT}/vX.Y.Z tag; refusing" >&2
   exit 1
 fi
 if ! DEPLOY_KEY="$(buildkite-agent secret get "${SECRET_NAME}")"; then
