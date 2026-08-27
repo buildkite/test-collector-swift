@@ -3,7 +3,11 @@ import XCTest
 
 final class CollectorTests: XCTestCase {
   func testDefaultCollector() throws {
-    let environment = EnvironmentValues(values: [:])
+    let environment = EnvironmentValues(
+      values: [:],
+      getFromEnvironment: { _ in nil },
+      getFromInfoDictionary: { _ in nil }
+    )
     let collector = TestCollector(environment: environment)
     let observer = try XCTUnwrap(collector.observer, "Observer should be initialised")
     XCTAssertNil(observer.uploader, "Uploader should not be initialised without an api key")
