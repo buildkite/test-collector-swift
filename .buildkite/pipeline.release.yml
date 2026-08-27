@@ -5,13 +5,15 @@
 # release builds push a plain vX.Y.Z tag for SwiftPM consumers.
 #
 # Safety model:
-#   - The rehearsal step is read-only and does not receive the push
-#     credential.
+#   - The rehearsal step is read-only: it never sees RELEASE_PUBLISH (set
+#     only on the publish step below) or the push credential, so it stops
+#     before pushing even on tag builds.
 #   - The push credential is a repository-specific SSH deploy key stored as
 #     a Buildkite secret whose access policy is pinned to bktest-release.
 #   - The publish step exists only on an exact test-collector-swift/vX.Y.Z
-#     tag, behind a block step. The release script independently re-checks
-#     the tag before pushing.
+#     tag, behind a block step; it sets RELEASE_PUBLISH=true in its own
+#     environment, and the release script independently re-checks the tag
+#     and RELEASE_PUBLISH before pushing.
 
 agents:
   queue: hosted
@@ -46,6 +48,10 @@ steps:
     depends_on:
       - swift-build
       - swift-confirm
+    env:
+      # Step-local publish signal: distinguishes this credentialed step from
+      # the rehearsal build step, which runs the same script.
+      RELEASE_PUBLISH: "true"
     command: test-collector-swift/.buildkite/steps/release
     plugins:
       - docker#v5.12.0:
@@ -53,3 +59,4 @@ steps:
           mount-buildkite-agent: true
           environment:
             - BUILDKITE_TAG
+            - RELEASE_PUBLISH
