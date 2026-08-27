@@ -361,40 +361,39 @@ private final class LiveTelemetryClient {
       "\(test.className).\(test.testName)",
       self.executionNameSuffix,
     ].compactMap { $0 }.joined(separator: " ")
-    let builder = self.tracer
-      .spanBuilder(spanName: TelemetryValue.rootSpanName)
-      .setNoParent()
+    let builder = self.tracer.spanBuilder(spanName: TelemetryValue.rootSpanName)
+    builder.setNoParent()
 
     for (key, value) in self.executionAttributes {
       builder.setAttribute(key: key, value: value)
     }
 
-    builder
-      .setAttribute(key: BuildkiteTelemetryAttribute.executionScope, value: test.className)
-      .setAttribute(key: BuildkiteTelemetryAttribute.testName, value: test.testName)
-      .setAttribute(
-        key: BuildkiteTelemetryAttribute.executionExternalID,
-        value: test.id.uuidString
-      )
-      .setAttribute(
-        key: SemanticConventions.Test.caseName.rawValue,
-        value: qualifiedTestName
-      )
-      .setAttribute(key: SemanticConventions.Test.suiteName.rawValue, value: test.className)
-      // The Swift SDK keeps the most recently set attributes when the span's
-      // start-time attribute limit is exceeded. Set the three synthesis fields
-      // last so even a limit of three still produces a usable execution.
-      .setAttribute(key: BuildkiteTelemetryAttribute.executionVia, value: TelemetryValue.executionVia)
-      .setAttribute(
-        key: BuildkiteTelemetryAttribute.runKey,
-        value: self.runKey
-      )
-      // Reserve the result's place before test code can consume the remaining
-      // attribute budget. finishExecution replaces this placeholder.
-      .setAttribute(
-        key: SemanticConventions.Test.caseResultStatus.rawValue,
-        value: TelemetryValue.unsetResult
-      )
+    builder.setAttribute(key: BuildkiteTelemetryAttribute.executionScope, value: test.className)
+    builder.setAttribute(key: BuildkiteTelemetryAttribute.testName, value: test.testName)
+    builder.setAttribute(
+      key: BuildkiteTelemetryAttribute.executionExternalID,
+      value: test.id.uuidString
+    )
+    builder.setAttribute(
+      key: SemanticConventions.Test.caseName.rawValue,
+      value: qualifiedTestName
+    )
+    builder.setAttribute(key: SemanticConventions.Test.suiteName.rawValue, value: test.className)
+
+    // The Swift SDK keeps the most recently set attributes when the span's
+    // start-time attribute limit is exceeded. Set the three synthesis fields
+    // last so even a limit of three still produces a usable execution.
+    builder.setAttribute(
+      key: BuildkiteTelemetryAttribute.executionVia,
+      value: TelemetryValue.executionVia
+    )
+    builder.setAttribute(key: BuildkiteTelemetryAttribute.runKey, value: self.runKey)
+    // Reserve the result's place before test code can consume the remaining
+    // attribute budget. finishExecution replaces this placeholder.
+    builder.setAttribute(
+      key: SemanticConventions.Test.caseResultStatus.rawValue,
+      value: TelemetryValue.unsetResult
+    )
 
     if let jobSpanContext = self.jobSpanContext {
       builder.addLink(spanContext: jobSpanContext)
