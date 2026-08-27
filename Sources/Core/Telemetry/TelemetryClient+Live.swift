@@ -16,7 +16,6 @@ import Glibc
 
 enum BuildkiteTelemetryAttribute {
   static let annotation = "buildkite.annotation"
-  static let buildID = "buildkite.build_id"
   static let buildNumber = "buildkite.build_number"
   static let collectorName = "buildkite.collector.name"
   static let collectorVersion = "buildkite.collector.version"
@@ -39,6 +38,7 @@ private enum TelemetryValue {
   static let frameworkName = "xctest"
   static let rootSpanName = "test.execution"
   static let skippedResult = "skipped"
+  static let unsetResult = "unset"
 }
 
 struct CollectorOTLPConfiguration {
@@ -240,7 +240,8 @@ extension TelemetryClient {
     uploadTags: [String: String],
     logger: Logger?,
     rootExporter: (any SpanExporter)? = nil,
-    childExporter: (any SpanExporter)? = nil
+    childExporter: (any SpanExporter)? = nil,
+    rootSpanLimits: SpanLimits = SpanLimits()
   ) -> TelemetryClient? {
     guard let configuration = CollectorOTLPConfiguration(
       environment: environment,
@@ -265,7 +266,8 @@ extension TelemetryClient {
       uploadTags: uploadTags,
       logger: logger,
       rootExporter: rootExporter ?? makeExporter(),
-      childExporter: childExporter ?? makeExporter()
+      childExporter: childExporter ?? makeExporter(),
+      rootSpanLimits: rootSpanLimits
     )
 
     return TelemetryClient(
@@ -286,6 +288,8 @@ private final class LiveTelemetryClient {
   private let executionProvider: TracerProviderSdk
   private let executionNamePrefix: String?
   private let executionNameSuffix: String?
+  private let executionAttributes: [String: AttributeValue]
+  private let runKey: String
   private let logger: Logger?
   private let registry = ExecutionTraceRegistry()
   private let reportedUnsupportedChildProvider = LockIsolated(false)
@@ -300,14 +304,20 @@ private final class LiveTelemetryClient {
     uploadTags: [String: String],
     logger: Logger?,
     rootExporter: any SpanExporter,
-    childExporter: any SpanExporter
+    childExporter: any SpanExporter,
+    rootSpanLimits: SpanLimits
   ) {
     self.executionNamePrefix = configuration.runEnvironment.executionNamePrefix
     self.executionNameSuffix = configuration.runEnvironment.executionNameSuffix
+    self.runKey = configuration.runEnvironment.key
     self.logger = logger
     self.jobSpanContext = Self.jobSpanContext(environment: environment)
 
-    let resource = Self.resource(
+    let resource = Self.providerResource(
+      configuration: configuration,
+      environment: environment
+    )
+    self.executionAttributes = Self.executionAttributes(
       configuration: configuration,
       environment: environment,
       uploadTags: uploadTags
@@ -316,7 +326,8 @@ private final class LiveTelemetryClient {
     let rootProcessor = SynchronousExecutionSpanProcessor(exporter: rootExporter, logger: logger)
     self.executionProvider = Self.makeProvider(
       resource: resource,
-      processor: rootProcessor
+      processor: rootProcessor,
+      spanLimits: rootSpanLimits
     )
     self.tracer = self.executionProvider.get(
       instrumentationName: TestCollector.name,
@@ -353,7 +364,12 @@ private final class LiveTelemetryClient {
     let builder = self.tracer
       .spanBuilder(spanName: TelemetryValue.rootSpanName)
       .setNoParent()
-      .setAttribute(key: BuildkiteTelemetryAttribute.executionVia, value: TelemetryValue.executionVia)
+
+    for (key, value) in self.executionAttributes {
+      builder.setAttribute(key: key, value: value)
+    }
+
+    builder
       .setAttribute(key: BuildkiteTelemetryAttribute.executionScope, value: test.className)
       .setAttribute(key: BuildkiteTelemetryAttribute.testName, value: test.testName)
       .setAttribute(
@@ -365,6 +381,20 @@ private final class LiveTelemetryClient {
         value: qualifiedTestName
       )
       .setAttribute(key: SemanticConventions.Test.suiteName.rawValue, value: test.className)
+      // The Swift SDK keeps the most recently set attributes when the span's
+      // start-time attribute limit is exceeded. Set the three synthesis fields
+      // last so even a limit of three still produces a usable execution.
+      .setAttribute(key: BuildkiteTelemetryAttribute.executionVia, value: TelemetryValue.executionVia)
+      .setAttribute(
+        key: BuildkiteTelemetryAttribute.runKey,
+        value: self.runKey
+      )
+      // Reserve the result's place before test code can consume the remaining
+      // attribute budget. finishExecution replaces this placeholder.
+      .setAttribute(
+        key: SemanticConventions.Test.caseResultStatus.rawValue,
+        value: TelemetryValue.unsetResult
+      )
 
     if let jobSpanContext = self.jobSpanContext {
       builder.addLink(spanContext: jobSpanContext)
@@ -494,11 +524,13 @@ private final class LiveTelemetryClient {
 
   private static func makeProvider(
     resource: Resource,
-    processor: any SpanProcessor
+    processor: any SpanProcessor,
+    spanLimits: SpanLimits = SpanLimits()
   ) -> TracerProviderSdk {
     self.withoutInheritedTraceContext {
       TracerProviderBuilder()
         .with(resource: resource)
+        .with(spanLimits: spanLimits)
         .with(sampler: Samplers.alwaysOn)
         .add(spanProcessor: processor)
         .build()
@@ -526,12 +558,14 @@ private final class LiveTelemetryClient {
     return operation()
   }
 
-  private static func resource(
+  // A resource identifies producer-wide entities shared by every span from the
+  // provider. Test Engine run fields and tags belong to each execution root.
+  private static func providerResource(
     configuration: CollectorOTLPConfiguration,
-    environment: EnvironmentValues,
-    uploadTags: [String: String]
+    environment: EnvironmentValues
   ) -> Resource {
     let run = configuration.runEnvironment
+    let pipelineRun = Self.ciPipelineRun(run: run, environment: environment)
     var attributes = [String: AttributeValue]()
 
     func set(_ key: String, _ value: String?) {
@@ -540,21 +574,48 @@ private final class LiveTelemetryClient {
       }
     }
 
-    set(SemanticConventions.Service.name.rawValue, environment.testEngineSuiteSlug ?? TestCollector.name)
+    set(SemanticConventions.Service.name.rawValue, environment.testEngineSuiteSlug)
     set(SemanticConventions.Service.namespace.rawValue, environment.buildkiteOrganizationSlug)
-    set(SemanticConventions.Service.instanceId.rawValue, run.jobId)
-    set(BuildkiteTelemetryAttribute.runKey, run.key)
-    set(BuildkiteTelemetryAttribute.runURL, run.url)
+    set(SemanticConventions.Cicd.pipelineRunId.rawValue, pipelineRun.id)
+    if pipelineRun.id != nil {
+      set(SemanticConventions.Cicd.pipelineRunUrlFull.rawValue, pipelineRun.url)
+    }
+    set(SemanticConventions.Cicd.workerId.rawValue, environment.buildkiteAgentId)
     set(SemanticConventions.Vcs.refHeadName.rawValue, run.branch)
     set(SemanticConventions.Vcs.refHeadRevision.rawValue, run.commitSha)
     if run.branch != nil {
       set(
-        SemanticConventions.Vcs.refHeadType.rawValue,
+        SemanticConventions.Vcs.refType.rawValue,
         environment.buildkiteTag == nil ? "branch" : "tag"
       )
     }
+
+    return EnvVarResource.get().merging(other: Resource(attributes: attributes))
+  }
+
+  // These fields describe each test execution, not the provider that emitted
+  // its child spans. Configure-level tags are set on every root; per-test tags
+  // are applied at finish time and override matching configure-level tags.
+  private static func executionAttributes(
+    configuration: CollectorOTLPConfiguration,
+    environment: EnvironmentValues,
+    uploadTags: [String: String]
+  ) -> [String: AttributeValue] {
+    let run = configuration.runEnvironment
+    let pipelineRun = Self.ciPipelineRun(run: run, environment: environment)
+    var attributes = [String: AttributeValue]()
+
+    func set(_ key: String, _ value: String?) {
+      if let value, Self.validAttributeKey(key) {
+        attributes[key] = .string(value)
+      }
+    }
+
+    set(BuildkiteTelemetryAttribute.runKey, run.key)
+    if run.url != pipelineRun.url {
+      set(BuildkiteTelemetryAttribute.runURL, run.url)
+    }
     set(BuildkiteTelemetryAttribute.buildNumber, run.number)
-    set(BuildkiteTelemetryAttribute.buildID, environment.buildkiteBuildId)
     set(BuildkiteTelemetryAttribute.jobID, run.jobId)
     set(BuildkiteTelemetryAttribute.stepID, environment.buildkiteStepId)
     set(BuildkiteTelemetryAttribute.message, run.message)
@@ -571,7 +632,30 @@ private final class LiveTelemetryClient {
       attributes[key] = AttributeValue(value.base) ?? .string(value.description)
     }
 
-    return EnvVarResource.get().merging(other: Resource(attributes: attributes))
+    return attributes
+  }
+
+  // Provider-native CI identity is distinct from the Test Engine run key.
+  private static func ciPipelineRun(
+    run: RunEnvironment,
+    environment: EnvironmentValues
+  ) -> (id: String?, url: String?) {
+    switch run.ci {
+    case "buildkite":
+      return (environment.buildkiteBuildId, environment.buildkiteBuildUrl)
+    case "github_actions":
+      let id = environment.gitHubRunId
+      let url = environment.gitHubRepository.flatMap { repository in
+        id.map { "https://github.com/\(repository)/actions/runs/\($0)" }
+      }
+      return (id, url)
+    case "circleci":
+      return (environment.circleWorkflowId, nil)
+    case "xcodeCloud":
+      return (environment.xcodeBuildId, nil)
+    default:
+      return (nil, nil)
+    }
   }
 
   private static func validAttributeKey(_ key: String) -> Bool {

@@ -4,6 +4,8 @@
 
 - Replace proprietary execution uploads with XCTest execution root spans submitted through OpenTelemetry
 - Export run and execution tags as `buildkite.tag.*` attributes
+- Keep stable suite, CI worker/run, and VCS identity on OpenTelemetry resources while keeping Test Engine run metadata, framework details, custom metadata, and tags on each execution root
+- Prioritize the three attributes required for execution synthesis when OpenTelemetry span attribute limits are constrained
 - Support standard OTLP/HTTP exporter configuration and child-span forwarding
 - Apply standard OTLP headers and protocols only with standard endpoints
 - Warn when the unsupported `BUILDKITE_ANALYTICS_BASE_URL` setting is ignored

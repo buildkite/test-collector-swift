@@ -105,6 +105,7 @@ again and add the following key-value pairs for your CI platform.
 **Buildkite**
 
 ```
+Key: BUILDKITE_AGENT_ID, Value: $(BUILDKITE_AGENT_ID)
 Key: BUILDKITE_BUILD_ID, Value: $(BUILDKITE_BUILD_ID)
 Key: BUILDKITE_BUILD_URL, Value: $(BUILDKITE_BUILD_URL)
 Key: BUILDKITE_BRANCH, Value: $(BUILDKITE_BRANCH)
@@ -185,7 +186,8 @@ Run-level tags can also be set programmatically by passing them to `load`. Envir
 TestCollector.load(uploadTags: ["host.arch": "arm64"])
 ```
 
-Run tags are exported as `buildkite.tag.<key>` resource attributes.
+Run tags are exported as `buildkite.tag.<key>` attributes on every test root.
+An execution-level tag takes precedence when it uses the same key.
 
 ### Execution-level tags
 
@@ -214,6 +216,19 @@ links to the job span instead of becoming its child. If the test suite has an
 OpenTelemetry SDK provider, the collector adds a forwarding processor without
 replacing its sampler or exporters. Otherwise, it installs a provider so spans
 created under a test can be exported as execution children.
+
+Resources identify producer-wide entities: the suite, provider-native CI run
+and URL, Buildkite worker, and checked-out VCS ref. Test Engine run metadata,
+collector and framework details, custom run metadata, and run tags are attached
+only to each `test.execution` root. They are not duplicated onto child spans.
+Collector-managed children share the producer resource; children from a tracer
+provider configured by the test suite keep that provider's resource.
+
+The collector prioritizes `buildkite.execution.via`, `buildkite.run_key`, and
+`test.case.result.status` so Test Engine can synthesize an execution when the
+OpenTelemetry SDK span attribute limit is constrained. The minimum useful span
+attribute limit is three; additional metadata and tags may be dropped at that
+limit.
 
 While the endpoint is healthy, finishing a test waits for its root span to be
 accepted by the configured OTLP endpoint. After a failure, subsequent roots stay

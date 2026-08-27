@@ -106,6 +106,7 @@ extension EnvironmentValues {
 
   var buildkiteBuildId: String? { self.string(for: "BUILDKITE_BUILD_ID") }
   var buildkiteBuildUrl: String? { self.string(for: "BUILDKITE_BUILD_URL") }
+  var buildkiteAgentId: String? { self.string(for: "BUILDKITE_AGENT_ID") }
   var buildkiteBranch: String? { self.string(for: "BUILDKITE_BRANCH") }
   var buildkiteCommit: String? { self.string(for: "BUILDKITE_COMMIT") }
   var buildkiteBuildNumber: String? { self.string(for: "BUILDKITE_BUILD_NUMBER") }
