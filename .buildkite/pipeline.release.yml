@@ -2,7 +2,7 @@
 # release dispatcher (.buildkite/pipeline.release.yml) running on the
 # separate bktest-release Buildkite pipeline. Rehearsals extract the Swift
 # history and verify its relationship to the standalone release mirror;
-# release builds push a plain vX.Y.Z tag for SwiftPM consumers.
+# release builds push a plain semantic-version tag for SwiftPM consumers.
 #
 # Safety model:
 #   - The rehearsal step is read-only: it never sees RELEASE_PUBLISH (set
@@ -10,10 +10,9 @@
 #     before pushing even on tag builds.
 #   - The push credential is a repository-specific SSH deploy key stored as
 #     a Buildkite secret whose access policy is pinned to bktest-release.
-#   - The publish step exists only on an exact test-collector-swift/vX.Y.Z
-#     tag, behind a block step; it sets RELEASE_PUBLISH=true in its own
-#     environment, and the release script independently re-checks the tag
-#     and RELEASE_PUBLISH before pushing.
+#   - The publish step exists only on a version-shaped candidate tag, behind a
+#     block step; the release script validates the exact stable, beta, or
+#     release-candidate form and RELEASE_PUBLISH before pushing.
 
 agents:
   queue: hosted
@@ -41,10 +40,10 @@ steps:
 
   - block: ":rocket: Mirror test-collector-swift release tag?"
     key: swift-confirm
-    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+$/
+    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+.*$/
 
   - label: ":github: test-collector-swift: push release mirror tag"
-    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+$/
+    if: build.tag =~ /^test-collector-swift\/v[0-9]+\.[0-9]+\.[0-9]+.*$/
     depends_on:
       - swift-build
       - swift-confirm

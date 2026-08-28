@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Extract test-collector-swift from bktest and mirror a prefixed release tag
-# as a plain vX.Y.Z tag in buildkite/test-collector-swift. The standalone
-# repository remains the SwiftPM distribution URL; only its tags are updated.
+# as a plain semantic-version tag in buildkite/test-collector-swift. The
+# standalone repository remains the SwiftPM distribution URL; only its tags
+# are updated.
 
 set -euo pipefail
 
@@ -9,7 +10,8 @@ PROJECT="test-collector-swift"
 REMOTE_URL="https://github.com/buildkite/test-collector-swift.git"
 PUSH_URL="git@github.com:buildkite/test-collector-swift.git"
 SECRET_NAME="TEST_COLLECTOR_SWIFT_DEPLOY_KEY"
-TAG_PATTERN="^${PROJECT}/v([0-9]+\.[0-9]+\.[0-9]+)$"
+TAG_PATTERN="^${PROJECT}/v([0-9]+\.[0-9]+\.[0-9]+(-(beta|rc)\.[0-9]+)?)$"
+RELEASE_TAG_PATTERN='^v[0-9]+\.[0-9]+\.[0-9]+(-(beta|rc)\.[0-9]+)?$'
 BOOTSTRAP_TAG="v0.6.0"
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -22,7 +24,7 @@ fi
 
 if [ -n "${BUILDKITE_TAG:-}" ]; then
   if [[ ! "${BUILDKITE_TAG}" =~ ${TAG_PATTERN} ]]; then
-    echo "BUILDKITE_TAG '${BUILDKITE_TAG}' does not match ${PROJECT}/vX.Y.Z; refusing" >&2
+    echo "BUILDKITE_TAG '${BUILDKITE_TAG}' is not a stable, beta, or release-candidate ${PROJECT} version; refusing" >&2
     exit 1
   fi
   VERSION="${BASH_REMATCH[1]}"
@@ -74,13 +76,14 @@ git -C "${MIRROR}" fetch --quiet --force --no-tags release \
   "+refs/tags/v*:refs/tags/release/v*"
 
 LATEST_REMOTE_TAG="$(
-  git -C "${MIRROR}" for-each-ref --format='%(refname:strip=3)' refs/tags/release/ |
-    grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' |
-    sort -V |
+  git -C "${MIRROR}" -c versionsort.suffix=-beta -c versionsort.suffix=-rc for-each-ref \
+    --sort=version:refname \
+    --format='%(refname:strip=3)' refs/tags/release/ |
+    grep -E "${RELEASE_TAG_PATTERN}" |
     tail -n 1
 )"
 if [ -z "${LATEST_REMOTE_TAG}" ]; then
-  echo "no stable release tags found in ${REMOTE_URL}; refusing" >&2
+  echo "no release tags found in ${REMOTE_URL}; refusing" >&2
   exit 1
 fi
 echo "latest standalone release is ${LATEST_REMOTE_TAG}"
@@ -90,7 +93,16 @@ if [ -n "${RELEASE_TAG}" ]; then
     echo "${RELEASE_TAG} already exists in ${REMOTE_URL}; refusing to replace it" >&2
     exit 1
   fi
-  HIGHEST_TAG="$(printf '%s\n%s\n' "${LATEST_REMOTE_TAG}" "${RELEASE_TAG}" | sort -V | tail -n 1)"
+  git -C "${MIRROR}" update-ref "refs/tags/release/${RELEASE_TAG}" \
+    "$(git -C "${MIRROR}" rev-parse "${CANDIDATE}")"
+  HIGHEST_TAG="$(
+    git -C "${MIRROR}" -c versionsort.suffix=-beta -c versionsort.suffix=-rc for-each-ref \
+      --sort=version:refname \
+      --format='%(refname:strip=3)' refs/tags/release/ |
+      grep -E "${RELEASE_TAG_PATTERN}" |
+      tail -n 1
+  )"
+  git -C "${MIRROR}" update-ref -d "refs/tags/release/${RELEASE_TAG}"
   if [ "${HIGHEST_TAG}" != "${RELEASE_TAG}" ] || [ "${LATEST_REMOTE_TAG}" = "${RELEASE_TAG}" ]; then
     echo "release ${RELEASE_TAG} must be newer than ${LATEST_REMOTE_TAG}; refusing" >&2
     exit 1
@@ -134,7 +146,7 @@ fi
 
 echo "--- Publishing ${RELEASE_TAG} to the standalone release mirror"
 if [ -z "${RELEASE_TAG}" ]; then
-  echo "RELEASE_PUBLISH=true without a ${PROJECT}/vX.Y.Z tag; refusing" >&2
+  echo "RELEASE_PUBLISH=true without a valid ${PROJECT} release tag; refusing" >&2
   exit 1
 fi
 if ! DEPLOY_KEY="$(buildkite-agent secret get "${SECRET_NAME}")"; then
