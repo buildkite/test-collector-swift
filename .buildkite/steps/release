@@ -10,8 +10,8 @@ PROJECT="test-collector-swift"
 REMOTE_URL="https://github.com/buildkite/test-collector-swift.git"
 PUSH_URL="git@github.com:buildkite/test-collector-swift.git"
 SECRET_NAME="TEST_COLLECTOR_SWIFT_DEPLOY_KEY"
-TAG_PATTERN="^${PROJECT}/v([0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?)$"
-RELEASE_TAG_PATTERN='^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$'
+TAG_PATTERN="^${PROJECT}/v([0-9]+\.[0-9]+\.[0-9]+(-(beta|rc)\.[0-9]+)?)$"
+RELEASE_TAG_PATTERN='^v[0-9]+\.[0-9]+\.[0-9]+(-(beta|rc)\.[0-9]+)?$'
 BOOTSTRAP_TAG="v0.6.0"
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -24,7 +24,7 @@ fi
 
 if [ -n "${BUILDKITE_TAG:-}" ]; then
   if [[ ! "${BUILDKITE_TAG}" =~ ${TAG_PATTERN} ]]; then
-    echo "BUILDKITE_TAG '${BUILDKITE_TAG}' is not a stable or beta ${PROJECT} version; refusing" >&2
+    echo "BUILDKITE_TAG '${BUILDKITE_TAG}' is not a stable, beta, or release-candidate ${PROJECT} version; refusing" >&2
     exit 1
   fi
   VERSION="${BASH_REMATCH[1]}"
@@ -76,7 +76,7 @@ git -C "${MIRROR}" fetch --quiet --force --no-tags release \
   "+refs/tags/v*:refs/tags/release/v*"
 
 LATEST_REMOTE_TAG="$(
-  git -C "${MIRROR}" -c versionsort.suffix=-beta for-each-ref \
+  git -C "${MIRROR}" -c versionsort.suffix=-beta -c versionsort.suffix=-rc for-each-ref \
     --sort=version:refname \
     --format='%(refname:strip=3)' refs/tags/release/ |
     grep -E "${RELEASE_TAG_PATTERN}" |
@@ -96,7 +96,7 @@ if [ -n "${RELEASE_TAG}" ]; then
   git -C "${MIRROR}" update-ref "refs/tags/release/${RELEASE_TAG}" \
     "$(git -C "${MIRROR}" rev-parse "${CANDIDATE}")"
   HIGHEST_TAG="$(
-    git -C "${MIRROR}" -c versionsort.suffix=-beta for-each-ref \
+    git -C "${MIRROR}" -c versionsort.suffix=-beta -c versionsort.suffix=-rc for-each-ref \
       --sort=version:refname \
       --format='%(refname:strip=3)' refs/tags/release/ |
       grep -E "${RELEASE_TAG_PATTERN}" |
