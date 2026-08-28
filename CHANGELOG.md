@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (targeting 2.0.0-beta.1)
+## 2.0.0-beta.1
 
 - Replace proprietary execution uploads with XCTest execution root spans submitted through OpenTelemetry
 - Export run and execution tags as `buildkite.tag.*` attributes
