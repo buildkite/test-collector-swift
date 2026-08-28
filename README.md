@@ -1,10 +1,23 @@
-# Buildkite Test Collector for Swift (Beta)
+# Buildkite Test Collector for Swift
 
 Official [Buildkite Test Engine](https://buildkite.com/platform/test-engine/) collector for Swift test frameworks ✨
 
 ⚒ **Supported test frameworks:** XCTest, Quick, and Nimble.
 
 📦 **Supported CI systems:** Buildkite, GitHub Actions, CircleCI, Xcode Cloud, and others via the `BUILDKITE_ANALYTICS_*` environment variables.
+
+Each test execution is exported as a parentless OpenTelemetry `test.execution`
+root span. Sampled OpenTelemetry spans created by the code under test can appear
+as its children. Test execution data is submitted only through OTLP; the
+collector does not use the legacy proprietary execution upload API.
+
+The collector requires Swift 5.10 or newer. Its macOS deployment target is macOS
+12 or newer.
+
+> [!NOTE]
+> The OpenTelemetry-based collector on this branch is being prepared for
+> `2.0.0-beta.1` and has not been released. The installation example below
+> continues to reference the latest released version, `0.6.0`.
 
 ## 👉 Installing
 
@@ -40,6 +53,32 @@ let package = Package(
 
 Set the `BUILDKITE_ANALYTICS_TOKEN` secret on your CI to the API token from earlier.
 
+By default, traces are sent using OTLP/HTTP protobuf to
+`https://tests-otlp.buildkite.com/v1/traces`. The collector adds the suite token
+and run key as request headers.
+
+To send traces through an OpenTelemetry endpoint such as the Buildkite Test
+Engine Client relay, set the standard exporter variables instead:
+
+```bash
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://127.0.0.1:4318/v1/traces"
+export OTEL_EXPORTER_OTLP_TRACES_HEADERS="authorization=Bearer%20local-token"
+export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL="http/protobuf"
+```
+
+The signal-specific variables take precedence over
+`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, and
+`OTEL_EXPORTER_OTLP_PROTOCOL`. A generic OTLP endpoint has `/v1/traces`
+appended. Standard header and protocol variables are applied only when a
+standard endpoint is explicitly configured; those variables alone do not enable
+the collector or select an endpoint. Standard endpoints receive only the
+explicitly configured OTLP headers, and the collector does not send the
+Buildkite suite token to them.
+`BUILDKITE_ANALYTICS_OTLP_ENDPOINT` remains available as a trusted,
+collector-specific endpoint override that receives only the suite token and run
+key and always uses HTTP/protobuf. To send custom headers or select a protocol
+for a relay, configure it through the standard exporter variables instead.
+
 ### Step 3
 
 If you're testing an Xcode project there's an extra step, Xcode doesn't pass environment variables from the process to the test runner so we need to manually map them. Open your test scheme or test plan(whichever you are using) and under the environment variable section add the following entry:
@@ -50,22 +89,35 @@ key:
 value:
 `$(BUILDKITE_ANALYTICS_TOKEN)`
 
+If you configure a standard OTLP endpoint, map that endpoint and its associated
+`OTEL_EXPORTER_OTLP_TRACES_*` header or protocol variables into the test runner
+in the same way.
+
 The same key value pair can be specified in your main bundle's `info.plist` file if you would rather specify it there. Note variables in the environment take precedent over those in the `info.plist` file.
 
 ### Step 3.5 (Optional)
 
-The only required environment variable is the analytics token but if you're using one of the supported CI platforms they can pass extra information to the test-collector to enrich the reports. Things like commit messages, branch names, build numbers, etc. Open your test scheme or test plan again and add the following key value pairs depending on your CI platform.
+When using the default endpoint, only the analytics token is required. Supported
+CI platforms can pass extra information to enrich the reports, such as commit
+messages, branch names, and build numbers. Open your test scheme or test plan
+again and add the following key-value pairs for your CI platform.
 
 **Buildkite**
 
 ```
+Key: BUILDKITE_AGENT_ID, Value: $(BUILDKITE_AGENT_ID)
 Key: BUILDKITE_BUILD_ID, Value: $(BUILDKITE_BUILD_ID)
 Key: BUILDKITE_BUILD_URL, Value: $(BUILDKITE_BUILD_URL)
 Key: BUILDKITE_BRANCH, Value: $(BUILDKITE_BRANCH)
 Key: BUILDKITE_COMMIT, Value: $(BUILDKITE_COMMIT)
 Key: BUILDKITE_BUILD_NUMBER, Value: $(BUILDKITE_BUILD_NUMBER)
 Key: BUILDKITE_JOB_ID, Value: $(BUILDKITE_JOB_ID)
+Key: BUILDKITE_STEP_ID, Value: $(BUILDKITE_STEP_ID)
 Key: BUILDKITE_MESSAGE, Value: $(BUILDKITE_MESSAGE)
+Key: BUILDKITE_ORGANIZATION_SLUG, Value: $(BUILDKITE_ORGANIZATION_SLUG)
+Key: BUILDKITE_TEST_ENGINE_SUITE_SLUG, Value: $(BUILDKITE_TEST_ENGINE_SUITE_SLUG)
+Key: TRACEPARENT, Value: $(TRACEPARENT)
+Key: TRACESTATE, Value: $(TRACESTATE)
 ```
 
 **Circle CI**
@@ -118,9 +170,9 @@ git push origin add-buildkite-test-engine
 
 You can tag test executions with key-value pairs to filter and group results in [Test Engine](https://buildkite.com/docs/test-engine/test-suites/tags).
 
-### Upload-level tags
+### Run-level tags
 
-Upload-level tags apply to all test executions in a run. Set the `BUILDKITE_ANALYTICS_TAGS` environment variable to a JSON object:
+Run-level tags apply to all test executions in a run. Set the `BUILDKITE_ANALYTICS_TAGS` environment variable to a JSON object:
 
 ```bash
 export BUILDKITE_ANALYTICS_TAGS='{"host.arch":"arm64","cloud.region":"us-east-1"}'
@@ -128,11 +180,14 @@ export BUILDKITE_ANALYTICS_TAGS='{"host.arch":"arm64","cloud.region":"us-east-1"
 
 If you're using an Xcode project, add this to your test scheme or test plan environment variables like the other `BUILDKITE_ANALYTICS_*` variables.
 
-Upload-level tags can also be set programmatically by passing them to `load`. Environment variable tags take precedence over programmatic tags when keys collide:
+Run-level tags can also be set programmatically by passing them to `load`. Environment variable tags take precedence over programmatic tags when keys collide:
 
 ```swift
 TestCollector.load(uploadTags: ["host.arch": "arm64"])
 ```
+
+Run tags are exported as `buildkite.tag.<key>` attributes on every test root.
+An execution-level tag takes precedence when it uses the same key.
 
 ### Execution-level tags
 
@@ -148,6 +203,45 @@ class PaymentTests: XCTestCase {
     }
 }
 ```
+
+The existing `tagExecution` API is unchanged. Execution tags are exported as
+`buildkite.tag.<key>` attributes on that test's root span.
+
+## OpenTelemetry behavior and delivery
+
+The collector creates each `test.execution` span through a private AlwaysOn
+provider, so it remains a trace root regardless of an application's sampling
+configuration. When Buildkite Agent trace context is available, the execution
+links to the job span instead of becoming its child. If the test suite has an
+OpenTelemetry SDK provider, the collector adds a forwarding processor without
+replacing its sampler or exporters. Otherwise, it installs a provider so spans
+created under a test can be exported as execution children.
+
+Resources identify producer-wide entities: the suite, provider-native CI run
+and URL, Buildkite worker, and checked-out VCS ref. Test Engine run metadata,
+collector and framework details, custom run metadata, and run tags are attached
+only to each `test.execution` root. They are not duplicated onto child spans.
+Collector-managed children share the producer resource; children from a tracer
+provider configured by the test suite keep that provider's resource.
+
+The collector prioritizes `buildkite.execution.via`, `buildkite.run_key`, and
+`test.case.result.status` so Test Engine can synthesize an execution when the
+OpenTelemetry SDK span attribute limit is constrained. The minimum useful span
+attribute limit is three; additional metadata and tags may be dropped at that
+limit.
+
+While the endpoint is healthy, finishing a test waits for its root span to be
+accepted by the configured OTLP endpoint. After a failure, subsequent roots stay
+in the collector's in-memory queue while export attempts back off for 10, 20,
+30, and then at most 60 seconds. The bundle-end flush always makes an immediate
+final attempt. When the endpoint is the Test Engine Client relay, acceptance
+transfers the span to the longer-lived parent process, which protects completed
+executions from an XCTest runner restart.
+
+This is not disk-backed delivery. A hard exit before a test finishes, a process
+exit while the endpoint remains unavailable, or a machine restart can still
+lose spans. An ambiguous network timeout may also result in a retry after the
+server accepted the first request.
 
 ## 🔍 Debugging
 

@@ -81,10 +81,20 @@ struct EnvironmentValues {
 extension EnvironmentValues {
   var isAnalyticsEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_ENABLED") ?? true }
   var analyticsToken: String? { self.string(for: "BUILDKITE_ANALYTICS_TOKEN", private: true) }
-  var analyticsBaseURL: URL? { self.url(for: "BUILDKITE_ANALYTICS_BASE_URL") }
+  var legacyAnalyticsBaseURL: String? { self.string(for: "BUILDKITE_ANALYTICS_BASE_URL") }
+  var analyticsOTLPEndpoint: String? { self.string(for: "BUILDKITE_ANALYTICS_OTLP_ENDPOINT") }
 
   var isAnalyticsDebugEnabled: Bool { self.bool(for: "BUILDKITE_ANALYTICS_DEBUG_ENABLED") ?? false }
   var analyticsTags: [String: String]? { self.stringDictionary(for: "BUILDKITE_ANALYTICS_TAGS") }
+
+  var otelEndpoint: String? { self.string(for: "OTEL_EXPORTER_OTLP_ENDPOINT") }
+  var otelHeaders: String? { self.string(for: "OTEL_EXPORTER_OTLP_HEADERS", private: true) }
+  var otelProtocol: String? { self.string(for: "OTEL_EXPORTER_OTLP_PROTOCOL") }
+  var otelTracesEndpoint: String? { self.string(for: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT") }
+  var otelTracesHeaders: String? {
+    self.string(for: "OTEL_EXPORTER_OTLP_TRACES_HEADERS", private: true)
+  }
+  var otelTracesProtocol: String? { self.string(for: "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL") }
 
   var analyticsKey: String? { self.string(for: "BUILDKITE_ANALYTICS_KEY") }
   var analyticsUrl: String? { self.string(for: "BUILDKITE_ANALYTICS_URL") }
@@ -96,11 +106,19 @@ extension EnvironmentValues {
 
   var buildkiteBuildId: String? { self.string(for: "BUILDKITE_BUILD_ID") }
   var buildkiteBuildUrl: String? { self.string(for: "BUILDKITE_BUILD_URL") }
+  var buildkiteAgentId: String? { self.string(for: "BUILDKITE_AGENT_ID") }
   var buildkiteBranch: String? { self.string(for: "BUILDKITE_BRANCH") }
   var buildkiteCommit: String? { self.string(for: "BUILDKITE_COMMIT") }
   var buildkiteBuildNumber: String? { self.string(for: "BUILDKITE_BUILD_NUMBER") }
   var buildkiteJobId: String? { self.string(for: "BUILDKITE_JOB_ID") }
   var buildkiteMessage: String? { self.string(for: "BUILDKITE_MESSAGE") }
+  var buildkiteOrganizationSlug: String? { self.string(for: "BUILDKITE_ORGANIZATION_SLUG") }
+  var buildkiteStepId: String? { self.string(for: "BUILDKITE_STEP_ID") }
+  var buildkiteTag: String? { self.string(for: "BUILDKITE_TAG") }
+  var testEngineSuiteSlug: String? { self.string(for: "BUILDKITE_TEST_ENGINE_SUITE_SLUG") }
+
+  var traceParent: String? { self.string(for: "TRACEPARENT") }
+  var traceState: String? { self.string(for: "TRACESTATE") }
 
   var ci: String? { self.string(for: "CI") }
 

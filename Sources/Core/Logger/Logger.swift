@@ -61,6 +61,15 @@ struct Logger {
     self.log(level: .info, message())
   }
 
+  /// Log a message with the `warning` log level
+  ///
+  /// If the logger's `logLevel` is greater than `warning`, nothing will be logged.
+  ///
+  /// - Parameter message: The message to be logged.
+  func warning(_ message: @autoclosure () -> String) {
+    self.log(level: .warning, message())
+  }
+
   /// Log a message with the `error` log level
   ///
   /// If the logger's `logLevel` is greater than `error`, nothing will be logged.
@@ -88,6 +97,7 @@ extension Logger {
   enum Level: String, Comparable {
     case debug
     case info
+    case warning
     case error
 
     // Based on values from https://github.com/apple/swift-log
@@ -95,6 +105,7 @@ extension Logger {
       switch self {
       case .debug: return 1
       case .info: return 2
+      case .warning: return 3
       case .error: return 5
       }
     }

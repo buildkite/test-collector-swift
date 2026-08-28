@@ -2,57 +2,36 @@
 import XCTest
 
 final class TestObserverTests: XCTestCase {
-  func testExecutionTagsFlowToTrace() {
-    let recordedTraces = LockIsolated([Trace]())
-    let uploader = UploadClient(
-      record: { trace in recordedTraces.withValue { $0.append(trace) } },
-      waitForUploads: { _ in }
-    )
-    let tracer = Tracer(
-      startSpan: { section, _ in section as AnyHashable },
-      endSpan: { id in Trace.Span(section: id as! String) }
-    )
-    let observer = TestObserver(logger: nil, tracer: tracer, uploader: uploader)
+  func testExecutionTagsFlowToTelemetry() {
+    let recordedTags = LockIsolated([[String: String]?]())
+    let telemetry = self.telemetry { tags in recordedTags.withValue { $0.append(tags) } }
+    let observer = TestObserver(logger: nil, telemetry: telemetry)
 
     observer.testCaseWillStart(self)
     observer.setTag(for: self, key: "suite", value: "smoke")
     observer.setTag(for: self, key: "feature", value: "payments")
     observer.testCaseDidFinish(self)
 
-    XCTAssertEqual(recordedTraces.value.count, 1)
-    XCTAssertEqual(recordedTraces.value.first?.tags, ["suite": "smoke", "feature": "payments"])
+    XCTAssertEqual(recordedTags.value.count, 1)
+    XCTAssertEqual(recordedTags.value.first!, ["suite": "smoke", "feature": "payments"])
   }
 
   func testExecutionTagsNilWhenEmpty() {
-    let recordedTraces = LockIsolated([Trace]())
-    let uploader = UploadClient(
-      record: { trace in recordedTraces.withValue { $0.append(trace) } },
-      waitForUploads: { _ in }
-    )
-    let tracer = Tracer(
-      startSpan: { section, _ in section as AnyHashable },
-      endSpan: { id in Trace.Span(section: id as! String) }
-    )
-    let observer = TestObserver(logger: nil, tracer: tracer, uploader: uploader)
+    let recordedTags = LockIsolated([[String: String]?]())
+    let telemetry = self.telemetry { tags in recordedTags.withValue { $0.append(tags) } }
+    let observer = TestObserver(logger: nil, telemetry: telemetry)
 
     observer.testCaseWillStart(self)
     observer.testCaseDidFinish(self)
 
-    XCTAssertEqual(recordedTraces.value.count, 1)
-    XCTAssertNil(recordedTraces.value.first?.tags)
+    XCTAssertEqual(recordedTags.value.count, 1)
+    XCTAssertNil(recordedTags.value.first!)
   }
 
   func testLateTagIsIgnored() {
-    let recordedTraces = LockIsolated([Trace]())
-    let uploader = UploadClient(
-      record: { trace in recordedTraces.withValue { $0.append(trace) } },
-      waitForUploads: { _ in }
-    )
-    let tracer = Tracer(
-      startSpan: { section, _ in section as AnyHashable },
-      endSpan: { id in Trace.Span(section: id as! String) }
-    )
-    let observer = TestObserver(logger: nil, tracer: tracer, uploader: uploader)
+    let recordedTags = LockIsolated([[String: String]?]())
+    let telemetry = self.telemetry { tags in recordedTags.withValue { $0.append(tags) } }
+    let observer = TestObserver(logger: nil, telemetry: telemetry)
 
     observer.testCaseWillStart(self)
     observer.setTag(for: self, key: "before", value: "yes")
@@ -61,7 +40,16 @@ final class TestObserverTests: XCTestCase {
     // Tag set after finish should be ignored
     observer.setTag(for: self, key: "after", value: "should-not-appear")
 
-    XCTAssertEqual(recordedTraces.value.count, 1)
-    XCTAssertEqual(recordedTraces.value.first?.tags, ["before": "yes"])
+    XCTAssertEqual(recordedTags.value.count, 1)
+    XCTAssertEqual(recordedTags.value.first!, ["before": "yes"])
+  }
+
+  private func telemetry(onFinish: @escaping ([String: String]?) -> Void) -> TelemetryClient {
+    TelemetryClient(
+      start: { $0.id },
+      annotate: { _, _ in },
+      finish: { _, _, tags in onFinish(tags) },
+      flush: {}
+    )
   }
 }

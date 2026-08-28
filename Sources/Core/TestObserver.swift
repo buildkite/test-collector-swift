@@ -1,17 +1,16 @@
 import XCTest
 
-/// An object that captures test data and uploads it in real time.
+/// An object that captures test data and exports it in real time.
 final class TestObserver: NSObject, XCTestObservation {
   let logger: Logger?
-  let tracer: Tracer
-  let uploader: UploadClient?
+  let telemetry: TelemetryClient?
   let uuid: () -> UUID
 
   /// The state of the current test.
   var test: TestState?
 
   /// The id associated with the root span of the current test.
-  var spanId: AnyHashable?
+  var executionID: TelemetryClient.ExecutionID?
 
   /// Per-test execution tags, keyed by test case identity.
   private let executionTags = LockIsolated([ObjectIdentifier: [String: String]]())
@@ -20,18 +19,15 @@ final class TestObserver: NSObject, XCTestObservation {
   ///
   /// - Parameters:
   ///   - logger: A logger.
-  ///   - tracer: The tracer for recording span data.
-  ///   - uploader: The upload client for uploading test results
+  ///   - telemetry: The client for exporting OpenTelemetry spans.
   ///   - uuid: A closure that returns a unique id to associate with an executed test case.
   init(
     logger: Logger? = .init(),
-    tracer: Tracer = .live(),
-    uploader: UploadClient? = nil,
+    telemetry: TelemetryClient? = nil,
     uuid: @escaping () -> UUID = UUID.init
   ) {
     self.logger = logger
-    self.tracer = tracer
-    self.uploader = uploader
+    self.telemetry = telemetry
     self.uuid = uuid
   }
 
@@ -54,12 +50,13 @@ final class TestObserver: NSObject, XCTestObservation {
   /// Called exactly once per test case.
   func testCaseWillStart(_ testCase: XCTestCase) {
     self.executionTags.withValue { $0[ObjectIdentifier(testCase)] = [:] }
-    self.spanId = self.tracer.startSpan(section: "top")
-    self.test = TestState(
+    let test = TestState(
       id: self.uuid(),
       className: XCTestCase.className(of: testCase),
       testName: XCTestCase.testName(of: testCase)
     )
+    self.test = test
+    self.executionID = self.telemetry?.startExecution(test)
   }
 
   #if canImport(ObjectiveC)
@@ -106,19 +103,13 @@ final class TestObserver: NSObject, XCTestObservation {
       return result?.isEmpty == true ? nil : result
     }
     defer {
-      spanId = nil
+      executionID = nil
       test = nil
     }
-    guard
-      let span = self.spanId.map(self.tracer.endSpan(id:)),
-      var test = self.test
-    else { return }
+    guard let executionID = self.executionID, var test = self.test else { return }
 
     test.result = testCase.result
-
-    let trace = Trace(test: test, span: span, tags: tags)
-
-    self.uploader?.record(trace: trace)
+    self.telemetry?.finishExecution(executionID, test: test, tags: tags)
   }
 
   /// Notifies the observer immediately after all tests in a test bundle finish executing.
@@ -128,7 +119,12 @@ final class TestObserver: NSObject, XCTestObservation {
   /// - Note: The test process will generally exit after this method returns, so it must block until all asynchronous
   /// work is complete.
   func testBundleDidFinish(_ testBundle: Bundle) {
-    self.uploader?.waitForUploads()
+    self.telemetry?.forceFlush()
     self.logger?.waitForLogs()
+  }
+
+  func annotate(_ content: String) {
+    guard let executionID = self.executionID else { return }
+    self.telemetry?.annotate(content, executionID: executionID)
   }
 }

@@ -20,23 +20,27 @@ public struct TestCollector {
       return
     }
 
+    if environment.legacyAnalyticsBaseURL != nil {
+      logger?.warning(
+        "BUILDKITE_ANALYTICS_BASE_URL is no longer supported and is ignored; use BUILDKITE_ANALYTICS_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_TRACES_ENDPOINT instead."
+      )
+    }
+
     let envTags = environment.analyticsTags ?? [:]
     let tags = uploadTags.merging(envTags) { _, env in env }
 
-    let tracer = Tracer.live()
-
-    let uploader: UploadClient?
-    if let apiToken = environment.analyticsToken {
-      let baseURL = environment.analyticsBaseURL ?? URL(string: Self.baseURL)!
-      let api = ApiClient.live(apiToken: apiToken, baseURL: baseURL)
-      let runEnvironment = environment.runEnvironment()
-      uploader = .live(api: api, runEnvironment: runEnvironment, tags: tags.isEmpty ? nil : tags, logger: logger)
-    } else {
-      logger?.info("TestCollector unable to locate API key. Test results will not be uploaded.")
-      uploader = nil
+    let telemetry = TelemetryClient.live(
+      environment: environment,
+      uploadTags: tags,
+      logger: logger
+    )
+    if telemetry == nil {
+      logger?.info(
+        "TestCollector requires an API token or OpenTelemetry exporter configuration. Test results will not be exported."
+      )
     }
 
-    self.observer = TestObserver(logger: logger, tracer: tracer, uploader: uploader)
+    self.observer = TestObserver(logger: logger, telemetry: telemetry)
   }
 
   /// Annotates the current test.
@@ -45,7 +49,7 @@ public struct TestCollector {
   ///
   /// - Parameter content: The content of this annotation
   public func annotate(_ content: @autoclosure () -> String) {
-    self.observer?.tracer.annotate(content())
+    self.observer?.annotate(content())
   }
 
   /// Tags the execution of the given test case with a key-value pair.
@@ -80,7 +84,7 @@ public struct TestCollector {
 
   public private(set) static var shared: TestCollector?
 
-  public static let baseURL = "https://analytics-api.buildkite.com/v1/"
+  public static let endpoint = "https://tests-otlp.buildkite.com/v1/traces"
   static let name = "test-collector-swift"
-  static let version = "0.6.0"
+  static let version = "2.0.0-beta.1"
 }
