@@ -14,11 +14,6 @@ collector does not use the legacy proprietary execution upload API.
 The collector requires Swift 5.10 or newer. Its macOS deployment target is macOS
 12 or newer.
 
-> [!NOTE]
-> The OpenTelemetry-based collector on this branch is being prepared for
-> `2.0.0-beta.1` and has not been released. The installation example below
-> continues to reference the latest released version, `0.6.0`.
-
 ## 👉 Installing
 
 ### Step 1
@@ -34,7 +29,7 @@ To use the Buildkite Test Collector with a SwiftPM project, add this repository 
 let package = Package(
   name: "MyProject",
   dependencies: [
-    .package(url: "https://github.com/buildkite/test-collector-swift", from: "0.6.0")
+    .package(url: "https://github.com/buildkite/test-collector-swift", exact: "2.0.0-beta.1")
   ],
   targets: [
     .target(name: "MyProject"),
